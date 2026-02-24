@@ -1,0 +1,280 @@
+Good move. V1 should **borrow intelligence**, not reinvent it.
+
+Here’s the clean way to connect Fractal to an existing LLM without losing structure.
+
+---
+
+# Goal
+
+Use an LLM to:
+
+* Generate structured domain nodes
+* Suggest tensions
+* Create 1 emergent grey synthesis
+
+But **you control the structure**.
+
+---
+
+# Step 1 — Choose Your LLM
+
+Simplest options:
+
+* OpenAI API
+* Anthropic API
+* Local model via Ollama
+
+For beginners: use OpenAI or Anthropic API first.
+
+---
+
+# Step 2 — Don’t Ask for “Ideas”
+
+Ask for **Structured Output Only**.
+
+Your prompt must force this shape:
+
+```
+You are generating a structured research field map.
+
+Return JSON only in this format:
+
+{
+  "domains": [
+    {
+      "name": "",
+      "summary": ""
+    }
+  ],
+  "tensions": [
+    {
+      "source": "",
+      "target": "",
+      "relationship": ""
+    }
+  ],
+  "emergent_pattern": {
+    "label": "",
+    "summary": ""
+  }
+}
+```
+
+No prose.
+No explanations.
+JSON only.
+
+Structure prevents slop.
+
+---
+
+# Step 3 — Convert LLM Output → Your Required Schema
+
+Take:
+
+* domains → colored nodes
+* tensions → edges
+* emergent_pattern → grey node
+
+Then transform into your required JSON contract:
+
+```
+{
+  "nodes": [],
+  "edges": []
+}
+```
+
+This keeps your frontend untouched.
+
+---
+
+# Step 4 — Keep Determinism
+
+Add:
+
+```
+temperature = 0.3
+```
+
+Lower creativity = more coherent maps.
+
+---
+
+# Step 5 — Add a Safety Filter
+
+Before sending to frontend:
+
+* Ensure 3–5 domains
+* Ensure at least 1 emergent pattern
+* Ensure no empty summaries
+
+If invalid → fallback to DEMO_MODE.
+
+Never break the graph.
+
+---
+
+# Step 6 — Control the Tone
+
+Add to prompt:
+
+* Avoid buzzwords
+* Avoid vague language
+* Focus on structural forces
+* Avoid generic definitions
+
+You must guide the model’s thinking.
+
+---
+
+# Step 7 — Cache the Output
+
+For demo stability:
+
+If same query:
+Store result in memory.
+Return same graph next time.
+
+No live randomness during presentation.
+
+---
+
+# Important Philosophy
+
+The LLM is:
+
+> A structured research assistant.
+
+Not:
+
+> The brain of the product.
+
+You still define:
+
+* Node logic
+* Edge meaning
+* Grey node rule
+
+---
+
+If you want, I can now give you:
+
+here’s a ready-to-paste FastAPI endpoint that connects to OpenAI, generates a structured map, enforces your rules, and falls back to a demo mode if needed. It’s deterministic, JSON-only, and safe for a frontend graph.
+
+from fastapi import FastAPI
+from pydantic import BaseModel
+import openai
+import os
+import json
+
+# --- CONFIG ---
+openai.api_key = os.getenv("OPENAI_API_KEY")
+LLM_MODEL = "gpt-4"  # or "gpt-3.5-turbo"
+TEMPERATURE = 0.3
+DEMO_MODE = {
+    "nodes": [
+        {"name": "Demo Domain A", "summary": "Example summary A", "color": "blue"},
+        {"name": "Demo Domain B", "summary": "Example summary B", "color": "green"},
+        {"name": "Emergent Pattern", "summary": "Grey synthesis demo", "color": "grey"},
+    ],
+    "edges": [
+        {"source": "Demo Domain A", "target": "Demo Domain B", "relationship": "tension"}
+    ]
+}
+
+app = FastAPI()
+
+# --- REQUEST MODEL ---
+class MapRequest(BaseModel):
+    query: str
+
+# --- UTILS ---
+def validate_llm_output(output_json):
+    """Ensure 3-5 domains, at least 1 emergent pattern, no empty summaries."""
+    try:
+        domains = output_json.get("domains", [])
+        emergent = output_json.get("emergent_pattern", {})
+        if not (3 <= len(domains) <= 5):
+            return False
+        if not emergent.get("summary"):
+            return False
+        for d in domains:
+            if not d.get("summary") or not d.get("name"):
+                return False
+        return True
+    except Exception:
+        return False
+
+def transform_to_graph(output_json):
+    """Convert LLM output to frontend graph schema."""
+    nodes = []
+    edges = []
+
+    # Domains
+    for d in output_json["domains"]:
+        nodes.append({"name": d["name"], "summary": d["summary"], "color": "blue"})
+
+    # Emergent
+    ep = output_json["emergent_pattern"]
+    nodes.append({"name": ep["label"], "summary": ep["summary"], "color": "grey"})
+
+    # Tensions
+    for t in output_json.get("tensions", []):
+        edges.append({"source": t["source"], "target": t["target"], "relationship": t["relationship"]})
+
+    return {"nodes": nodes, "edges": edges}
+
+def call_llm(query: str):
+    prompt = f"""
+You are generating a structured research field map.
+Return JSON only in this format:
+
+{{
+  "domains": [{{"name": "", "summary": ""}}],
+  "tensions": [{{"source": "", "target": "", "relationship": ""}}],
+  "emergent_pattern": {{"label": "", "summary": ""}}
+}}
+
+Rules:
+- 3-5 domains
+- At least 1 emergent pattern
+- No empty summaries
+- Avoid buzzwords and vague language
+- Focus on structural forces
+- Return JSON only, no explanations
+Query: {query}
+"""
+
+    response = openai.ChatCompletion.create(
+        model=LLM_MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=TEMPERATURE
+    )
+    content = response.choices[0].message.content
+    return json.loads(content)
+
+# --- ENDPOINT ---
+@app.post("/generate-map")
+def generate_map(request: MapRequest):
+    try:
+        output_json = call_llm(request.query)
+        if not validate_llm_output(output_json):
+            return DEMO_MODE
+        graph = transform_to_graph(output_json)
+        return graph
+    except Exception as e:
+        print("Error:", e)
+        return DEMO_MODE
+
+✅ Features built-in:
+
+JSON-only structured output
+
+Deterministic-ish via low temperature
+
+Safety fallback → DEMO_MODE
+
+Enforces 3–5 domains + emergent pattern
+
+Easy to integrate with your frontend
