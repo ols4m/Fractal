@@ -1,2 +1,147 @@
-The journal is a file. All agents were used to document progress throughout the project, so when it's needed to be picked up by a different agent in a different coding session, refer back to this research and pick off for a lift off. 
-Progress to now: major progress through the project over time. When tokens have run out, give a concise summary of where you left off and where you would pick up from at a different time point. 
+# Fractal — Agent Journal
+
+## About This Journal
+This journal documents progress throughout the Fractal project. When tokens run out or a new agent picks up the work, refer back here to understand where things left off and where to continue.
+
+---
+
+## Project Summary
+Fractal is an AI-powered idea synthesis tool that maps relationships between concepts and presents them as an expandable visual network. It is not a search engine — it shows structural forces, tensions, and emergent patterns shaping a big question.
+
+**Current Status:** Demo built with hardcoded data for one query. Basic node/edge visual rendering works. Next step is connecting a live LLM backend.
+
+---
+
+## Architecture Decision: Two Paths
+
+### The Core Decision
+- **Ollama** = local development environment (free, offline, your machine)
+- **Groq** = deployed demo/mockup (free tier API, internet accessible, real users)
+
+Same underlying model (Llama 3) runs in both places, keeping behavior consistent.
+
+---
+
+## Path 1 — Development Architecture (Ollama)
+
+```
+Developer Machine
+│
+├── Frontend (React / your UI framework)
+│     └── sends query to local backend
+│
+├── Backend (FastAPI or Node server)
+│     └── receives query
+│     └── formats structured JSON prompt
+│     └── sends to Ollama on localhost
+│
+└── Ollama (running locally on port 11434)
+      └── runs Llama 3 model on your machine
+      └── returns structured JSON map
+      └── backend validates + transforms
+      └── frontend renders graph
+```
+
+**Key points:**
+- Nothing leaves your machine
+- No API keys needed
+- No rate limits
+- No cost ever
+- Use this to build, test, and iterate on prompts
+- Break things freely here — no consequences
+
+---
+
+## Path 2 — Production/Demo Architecture (Groq)
+
+```
+User (anywhere in the world)
+│
+└── Browser
+      └── sends query to your deployed frontend
+            │
+            └── Deployed Backend (e.g. Railway, Render, or Vercel)
+                  └── receives query
+                  └── formats structured JSON prompt
+                  └── sends to Groq API (over internet)
+                        │
+                        └── Groq servers run Llama 3
+                        └── returns structured JSON map
+                  └── backend validates + transforms
+                  └── frontend renders graph
+                  └── user sees their Fractal map
+```
+
+**Key points:**
+- Groq free tier handles solid demo traffic
+- Fast — Groq is actually faster than OpenAI
+- Swap from Ollama to Groq = change API URL + API key + model name (~10 min)
+- When free tier runs out, paid Groq is much cheaper than OpenAI/Anthropic
+- This is what investors, users, and your team interact with
+
+---
+
+## Switching Between Paths
+
+The only things that change between Ollama (dev) and Groq (prod):
+
+| | Ollama (Dev) | Groq (Prod) |
+|---|---|---|
+| API URL | http://localhost:11434 | https://api.groq.com |
+| API Key | none needed | GROQ_API_KEY |
+| Model name | llama3 | llama3-8b-8192 |
+| Who can access | only you | everyone |
+| Cost | free | free tier → then low cost |
+
+Everything else — the prompt, the JSON schema, the validation logic, the frontend — stays identical.
+
+---
+
+## Future Architecture (Scale Stage — 100k+ users)
+
+When API costs outgrow revenue, the move is:
+
+```
+User → Frontend → Backend → Fine-tuned Llama 3 (self-hosted on GPU server)
+                                    ↑
+                        Trained on synthetic data (GPT-4 generated)
+                        + real user map data collected over time
+                        Hosted on RunPod or AWS GPU instance
+                        ~$200-500/month flat vs $10k+/month on API
+```
+
+**How to get training data when you have none:**
+1. Use GPT-4 or Claude to generate 500+ high quality Fractal maps synthetically
+2. Review and curate the good ones
+3. Launch on Groq API and collect real user maps + engagement signals
+4. Combine synthetic + real data → fine-tune Llama 3
+5. Self-host the fine-tuned model → costs drop dramatically
+
+---
+
+## LLM Decision Summary
+
+| Stage | Solution | Cost |
+|---|---|---|
+| Building now | Ollama locally | Free |
+| Demo / mockup | Groq free tier | Free |
+| Early growth | Groq paid | Low |
+| 100k+ users | Fine-tuned Llama 3, self-hosted | Flat rate, much cheaper |
+| Never | Train from scratch | Not worth it at any stage |
+
+---
+
+## Where We Left Off
+- Hardcoded demo working with basic node/edge rendering
+- Architecture decision made: Ollama for dev, Groq for deployed demo
+- Backend structure already drafted in AgentNotebook (FastAPI endpoint with JSON prompt, validation, and DEMO_MODE fallback)
+- Next step: wire up the existing backend template to Ollama locally, test structured JSON output, then swap to Groq for deployment
+
+---
+
+## Next Agent Picks Up From
+1. Take the FastAPI backend from AgentNotebook
+2. Replace OpenAI references with Ollama endpoint (localhost:11434)
+3. Test with a few queries locally — confirm JSON schema comes back clean
+4. Once working locally, swap to Groq API for deployed version
+5. Connect to the existing frontend graph renderer
