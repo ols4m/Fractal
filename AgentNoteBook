@@ -1,177 +1,189 @@
-Good move. V1 should **borrow intelligence**, not reinvent it.
+# Fractal — Agent Notebook
 
-Here’s the clean way to connect Fractal to an existing LLM without losing structure.
-
----
-
-# Goal
-
-Use an LLM to:
-
-* Generate structured domain nodes
-* Suggest tensions
-* Create 1 emergent grey synthesis
-
-But **you control the structure**.
+## Original LLM + Backend Strategy
+*(See original notes below for FastAPI + structured JSON output approach)*
 
 ---
 
-# Step 1 — Choose Your LLM
+## Frontend: Wikipedia Map (controversial/wikipedia-map)
 
-Simplest options:
-
-* OpenAI API
-* Anthropic API
-* Local model via Ollama
-
-For beginners: use OpenAI or Anthropic API first.
+**Repo:** https://github.com/controversial/wikipedia-map
+**License:** Open source — fork freely
 
 ---
 
-# Step 2 — Don’t Ask for “Ideas”
+### What It Is
 
-Ask for **Structured Output Only**.
+A web app that visualizes connections between topics as an interactive node graph. The user enters a topic, a node appears, they click to expand it, and new connected nodes branch out. This is essentially the same interaction model Fractal needs — it's a near-perfect base to build on.
 
-Your prompt must force this shape:
+---
+
+### Tech Stack (What's Inside)
+
+**Graph Rendering:**
+- `vis.js` (vis-network) — the core graph library that draws and animates all nodes and edges
+- Hosted via CDN: `https://cdnjs.cloudflare.com/ajax/libs/vis/4.16.1/vis-network.min.js`
+
+**UI Libraries:**
+- `shepherd.js` — guided tour/onboarding for users
+- `ionicons` — icon set for buttons (GitHub, help, shuffle, trash icons)
+- `clipboard.js` — copy-to-clipboard functionality
+
+**Frontend Files:**
+```
+index.html              ← main entry point, loads everything
+css/
+  style.css             ← main layout styles
+  bar.css               ← top search bar styles
+  buttongroup.css       ← bottom-right button group
+  shepherd-custom.css   ← custom tour styles
+  commafield.css        ← multi-topic input field
+  welcome.css           ← welcome/info box
+  modals.css            ← modal dialogs
+  progress.css          ← loading progress bars
+js/
+  wikipedia_parse.js    ← fetches + parses Wikipedia API (REPLACE THIS for Fractal)
+  helpers.js            ← utility functions
+  main_functions.js     ← core graph logic (ADD NODES, EXPAND, COLOR)
+  main.js               ← main app logic
+  help.js               ← tutorial/tour logic
+  bindings.js           ← event listeners (clicks, keypresses)
+  commafield.js         ← multi-input tag field
+  network_serialize.js  ← save/share graph state via URL
+  loadsaved.js          ← load shared graph from URL
+  modals.js             ← modal open/close logic
+  progress.js           ← loading bar logic
+```
+
+---
+
+### How It Works (Original Flow)
 
 ```
-You are generating a structured research field map.
+User types topic → clicks Go
+→ wikipedia_parse.js calls Wikipedia API
+→ gets linked articles from first paragraph
+→ main_functions.js adds them as nodes to vis.js graph
+→ nodes colored by distance from center node
+→ user clicks a node → expands further
+```
 
-Return JSON only in this format:
+---
 
-{
-  "domains": [
-    {
-      "name": "",
-      "summary": ""
-    }
-  ],
-  "tensions": [
-    {
-      "source": "",
-      "target": "",
-      "relationship": ""
-    }
-  ],
-  "emergent_pattern": {
-    "label": "",
-    "summary": ""
-  }
+### How To Adapt It For Fractal
+
+The key insight: **only one file needs to be replaced** to swap Wikipedia data for Fractal/LLM data.
+
+**Replace `wikipedia_parse.js` with `fractal_api.js`**
+
+Instead of calling the Wikipedia API, call your Groq/Ollama backend:
+
+```javascript
+// fractal_api.js — replaces wikipedia_parse.js
+
+async function getSubPages(query) {
+  const response = await fetch('http://localhost:8000/generate-map', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query: query })
+  });
+  const data = await response.json();
+
+  // Return node names so main_functions.js can add them to the graph
+  return data.nodes.map(node => node.name);
 }
 ```
 
-No prose.
-No explanations.
-JSON only.
-
-Structure prevents slop.
+Everything else — the graph rendering, the click-to-expand, the animations, the UI — stays exactly the same.
 
 ---
 
-# Step 3 — Convert LLM Output → Your Required Schema
+### What To Customize For Fractal Branding
 
-Take:
+| File | What To Change |
+|---|---|
+| `index.html` | Title, meta description, welcome message text |
+| `css/style.css` | Background color, font, overall aesthetic |
+| `css/bar.css` | Search bar appearance, placeholder text |
+| `css/welcome.css` | Landing message ("Wikipedia Map" → "Fractal") |
+| `js/wikipedia_parse.js` | Replace entirely with `fractal_api.js` |
+| `js/help.js` | Update tutorial text to describe Fractal, not Wikipedia |
+| `js/main_functions.js` | Node colors — map domain colors to Fractal's color scheme |
 
-* domains → colored nodes
-* tensions → edges
-* emergent_pattern → grey node
+**Node color logic** lives in `main_functions.js`. Currently colors nodes by distance from center. For Fractal you'll want to color by:
+- Domain nodes → their assigned color (blue, green, etc.)
+- Emergent/grey node → grey
+- Tension edges → styled differently than regular connections
 
-Then transform into your required JSON contract:
+---
 
-```
+### What To Keep Exactly As-Is
+
+- All of `vis.js` graph rendering
+- `bindings.js` — click/keypress handling works perfectly
+- `network_serialize.js` — share-by-URL feature is a great free feature to keep
+- `commafield.js` — multi-topic input is useful for Fractal too
+- `modals.js` and `progress.js` — loading states and modals are needed
+
+---
+
+### Step-by-Step Integration Plan
+
+1. **Fork the repo** into your own GitHub
+2. **Clone it locally** — open `index.html` in browser to confirm it works with Wikipedia first
+3. **Create `js/fractal_api.js`** — replaces `wikipedia_parse.js`, points to your backend
+4. **Update `index.html`** — swap `wikipedia_parse.js` script tag for `fractal_api.js`
+5. **Restyle** — update CSS files and welcome text for Fractal branding
+6. **Update node colors** in `main_functions.js` to match Fractal's color scheme
+7. **Test locally** with Ollama backend running
+8. **Deploy** pointing to Groq backend for the live demo
+
+---
+
+### Important Note on Licensing
+
+This repo is open source. You can fork and modify it freely. You should:
+- Keep a note in your code crediting the original (`vis.js` graph rendering based on wikipedia-map by Luke Deen Taylor)
+- Remove all Wikipedia-specific branding from the UI
+- The core logic is yours to adapt
+
+---
+
+## Original LLM Backend Strategy (FastAPI + Groq/Ollama)
+
+*(Original AgentNotebook content preserved below)*
+
+---
+
+### Goal
+Use an LLM to generate structured domain nodes, suggest tensions, and create 1 emergent grey synthesis. You control the structure.
+
+### LLM Prompt Schema
+```json
 {
-  "nodes": [],
-  "edges": []
+  "domains": [{"name": "", "summary": ""}],
+  "tensions": [{"source": "", "target": "", "relationship": ""}],
+  "emergent_pattern": {"label": "", "summary": ""}
 }
 ```
 
-This keeps your frontend untouched.
-
----
-
-# Step 4 — Keep Determinism
-
-Add:
-
-```
-temperature = 0.3
-```
-
-Lower creativity = more coherent maps.
-
----
-
-# Step 5 — Add a Safety Filter
-
-Before sending to frontend:
-
-* Ensure 3–5 domains
-* Ensure at least 1 emergent pattern
-* Ensure no empty summaries
-
-If invalid → fallback to DEMO_MODE.
-
-Never break the graph.
-
----
-
-# Step 6 — Control the Tone
-
-Add to prompt:
-
-* Avoid buzzwords
-* Avoid vague language
-* Focus on structural forces
-* Avoid generic definitions
-
-You must guide the model’s thinking.
-
----
-
-# Step 7 — Cache the Output
-
-For demo stability:
-
-If same query:
-Store result in memory.
-Return same graph next time.
-
-No live randomness during presentation.
-
----
-
-# Important Philosophy
-
-The LLM is:
-
-> A structured research assistant.
-
-Not:
-
-> The brain of the product.
-
-You still define:
-
-* Node logic
-* Edge meaning
-* Grey node rule
-
----
-
-If you want, I can now give you:
-
-here’s a ready-to-paste FastAPI endpoint that connects to OpenAI, generates a structured map, enforces your rules, and falls back to a demo mode if needed. It’s deterministic, JSON-only, and safe for a frontend graph.
-
+### FastAPI Endpoint (swap OpenAI for Groq)
+```python
 from fastapi import FastAPI
 from pydantic import BaseModel
-import openai
+import httpx
 import os
 import json
 
-# --- CONFIG ---
-openai.api_key = os.getenv("OPENAI_API_KEY")
-LLM_MODEL = "gpt-4"  # or "gpt-3.5-turbo"
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+MODEL = "llama3-8b-8192"
 TEMPERATURE = 0.3
+
+# For local dev with Ollama, swap these:
+# GROQ_API_URL = "http://localhost:11434/api/chat"
+# MODEL = "llama3"
+
 DEMO_MODE = {
     "nodes": [
         {"name": "Demo Domain A", "summary": "Example summary A", "color": "blue"},
@@ -185,50 +197,38 @@ DEMO_MODE = {
 
 app = FastAPI()
 
-# --- REQUEST MODEL ---
 class MapRequest(BaseModel):
     query: str
 
-# --- UTILS ---
 def validate_llm_output(output_json):
-    """Ensure 3-5 domains, at least 1 emergent pattern, no empty summaries."""
     try:
         domains = output_json.get("domains", [])
         emergent = output_json.get("emergent_pattern", {})
-        if not (3 <= len(domains) <= 5):
-            return False
-        if not emergent.get("summary"):
-            return False
+        if not (3 <= len(domains) <= 5): return False
+        if not emergent.get("summary"): return False
         for d in domains:
-            if not d.get("summary") or not d.get("name"):
-                return False
+            if not d.get("summary") or not d.get("name"): return False
         return True
     except Exception:
         return False
 
 def transform_to_graph(output_json):
-    """Convert LLM output to frontend graph schema."""
     nodes = []
     edges = []
-
-    # Domains
     for d in output_json["domains"]:
         nodes.append({"name": d["name"], "summary": d["summary"], "color": "blue"})
-
-    # Emergent
     ep = output_json["emergent_pattern"]
     nodes.append({"name": ep["label"], "summary": ep["summary"], "color": "grey"})
-
-    # Tensions
     for t in output_json.get("tensions", []):
         edges.append({"source": t["source"], "target": t["target"], "relationship": t["relationship"]})
-
     return {"nodes": nodes, "edges": edges}
 
-def call_llm(query: str):
-    prompt = f"""
-You are generating a structured research field map.
-Return JSON only in this format:
+@app.post("/generate-map")
+async def generate_map(request: MapRequest):
+    try:
+        prompt = f"""
+You are generating a structured research field map for Fractal.
+Return JSON only. No prose. No explanations.
 
 {{
   "domains": [{{"name": "", "summary": ""}}],
@@ -237,44 +237,41 @@ Return JSON only in this format:
 }}
 
 Rules:
-- 3-5 domains
+- 3-5 domains only
 - At least 1 emergent pattern
 - No empty summaries
-- Avoid buzzwords and vague language
-- Focus on structural forces
-- Return JSON only, no explanations
-Query: {query}
+- Avoid buzzwords
+- Focus on structural forces and real tensions
+- JSON only
+
+Query: {request.query}
 """
-
-    response = openai.ChatCompletion.create(
-        model=LLM_MODEL,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=TEMPERATURE
-    )
-    content = response.choices[0].message.content
-    return json.loads(content)
-
-# --- ENDPOINT ---
-@app.post("/generate-map")
-def generate_map(request: MapRequest):
-    try:
-        output_json = call_llm(request.query)
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                GROQ_API_URL,
+                headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
+                json={
+                    "model": MODEL,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": TEMPERATURE
+                }
+            )
+        content = response.json()["choices"][0]["message"]["content"]
+        output_json = json.loads(content)
         if not validate_llm_output(output_json):
             return DEMO_MODE
-        graph = transform_to_graph(output_json)
-        return graph
+        return transform_to_graph(output_json)
     except Exception as e:
         print("Error:", e)
         return DEMO_MODE
+```
 
-✅ Features built-in:
+### Dev vs Prod Config
 
-JSON-only structured output
+| Setting | Ollama (Dev) | Groq (Prod) |
+|---|---|---|
+| API URL | http://localhost:11434/api/chat | https://api.groq.com/openai/v1/chat/completions |
+| API Key | none | GROQ_API_KEY env var |
+| Model | llama3 | llama3-8b-8192 |
 
-Deterministic-ish via low temperature
-
-Safety fallback → DEMO_MODE
-
-Enforces 3–5 domains + emergent pattern
-
-Easy to integrate with your frontend
+Change only these 3 lines to switch between environments.
