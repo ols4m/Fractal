@@ -275,3 +275,151 @@ Query: {request.query}
 | Model | llama3 | llama3-8b-8192 |
 
 Change only these 3 lines to switch between environments.
+
+# Fractal — Deep Dive Resource Guide
+*Curated resources most developers don't know about, organized by what they help you build*
+
+---
+
+## 1. GRAPH VISUALIZATION
+
+### vis.js Network — Your Current Library
+- **Official examples gallery:** https://visjs.github.io/vis-network/examples/
+  - This is gold. Every edge style, node shape, color group, clustering behavior — all shown with live code. Spend an hour here before touching any styling code.
+- **Full network documentation:** https://visjs.github.io/vis-network/docs/
+  - Node groups are the key feature for Fractal — you can assign nodes to groups and style each group differently. This is exactly how you'd color domain nodes vs the grey emergent node.
+- **CodeSandbox examples:** https://codesandbox.io/examples/package/vis-network
+  - Live editable examples including a Vue + Flask integration that's very close to Fractal's stack
+
+### D3.js Force Graph — The Upgrade Path
+If you ever outgrow vis.js or want more visual control, D3 is the next level. It's harder but gives you pixel-perfect control over everything.
+- **D3 force directed graph:** https://d3js.org/d3-force
+  - The physics engine behind most interactive knowledge graphs on the web
+- **3D force graph (vasturiano):** https://github.com/vasturiano/3d-force-graph
+  - Someone built a beautiful 3D version of exactly what Fractal does using D3 + ThreeJS. Has React bindings. This is worth studying deeply — it's basically a more advanced Fractal.
+- **LLM + D3 force graph (almost exactly Fractal):** https://medium.com/@junjunzaragosa2309/using-llm-to-generate-data-for-d3-js-force-directed-graph-c490382d1172
+  - A developer built the exact same concept — LLM generates nodes and links, D3 renders them. Their source code is on GitHub: https://github.com/jzaragosa06/fdg-and-ai and live demo on Render. Study this carefully.
+
+### Obsidian Graph View — Design Inspiration
+Obsidian is a note-taking app but its graph view is exactly the aesthetic Fractal should aim for. It's the most beloved graph UI in the developer world.
+- **Obsidian graph view:** https://obsidian.md
+  - Download and use it for free. Study how nodes cluster, how clicking feels, how the physics behaves. This is your design reference.
+- **InfraNodus — AI + graph:** https://infranodus.com
+  - A tool that adds AI-powered gap detection to knowledge graphs. Very close to Fractal's vision. Not open source but useful to understand what the product looks like when it's mature.
+
+---
+
+## 2. LLM BACKEND
+
+### Groq — Your Production API
+- **Official quickstart:** https://console.groq.com/docs/quickstart
+  - Get an API key and make your first call in under 10 minutes. Use `llama-3.3-70b-versatile` as the model — it's their best free-tier model right now.
+- **JSON mode on Groq:** Pass `response_format: {"type": "json_object"}` in your API call — Groq supports this natively, which means cleaner structured output for Fractal maps without extra parsing work.
+
+### Ollama — Your Dev Environment
+- **Structured outputs official docs:** https://docs.ollama.com/capabilities/structured-outputs
+  - Ollama now natively supports JSON schema enforcement. Pass your Fractal JSON schema directly to the `format` parameter and the model is *forced* to return valid JSON matching your schema. This is huge — no more broken JSON crashing your graph.
+- **Practical JSON guide:** https://voipnuggets.com/2025/12/30/how-to-get-structured-json-responses-from-a-llm-using-ollama/
+  - Short, practical, shows both simple JSON mode and strict schema enforcement
+- **Production-grade structured output pipeline:** https://markaicode.com/ollama-structured-output-pipeline/
+  - The honest guide — covers what breaks at scale (6% failure rate at 10k calls/day), how to add Pydantic validation + retry loops, and when to switch to grammar-constrained generation. Read before you go to production.
+
+### Instructor — The Pro Tool for Structured Output
+- **Instructor + Ollama:** https://python.useinstructor.com/integrations/ollama/
+  - Instructor is a Python library that wraps Ollama/OpenAI and guarantees structured output using Pydantic models. It adds automatic retry logic when the model returns bad JSON. For Fractal's backend this is a 10-line upgrade that makes your JSON output rock solid. Highly recommended.
+
+---
+
+## 3. DEPLOYMENT
+
+### Render — Best Free Tier for Your Backend
+- **FastAPI on Render:** https://render.com/articles/fastapi-deployment-options
+  - Render has a free tier with 750 hours/month — enough to keep your FastAPI backend always on. Render is the better choice for Fractal right now because Railway removed its free tier in 2024.
+- **Key caveat:** Free tier spins down after 15 minutes of inactivity, causing a 10–30 second cold start on first request. For a demo this is fine. For production upgrade to $7/month to keep it always on.
+
+### Railway — Fast Deployment, No Free Tier
+- **FastAPI on Railway:** https://docs.railway.com/guides/fastapi
+  - Railway is faster to deploy and has a better developer UI, but no free tier anymore — only a small one-time $5 credit. Use this if someone on the team has $5 to spend, it's worth it for the experience.
+- **Railway vs Render honest breakdown:** https://designrevision.com/blog/render-vs-railway
+  - The clearest comparison written recently. Short verdict: Render for free/predictable costs, Railway for speed and flexibility.
+
+### Vercel — Best for Your Frontend
+- Your Wikipedia Map frontend is static HTML/JS — Vercel deploys it for free in seconds with zero configuration. Just connect the GitHub repo and push.
+- https://vercel.com — free static hosting, global CDN, automatic SSL
+
+---
+
+## 4. HIDDEN GEM TOOLS YOUR TEAM SHOULD KNOW ABOUT
+
+### Pydantic — Make Your Backend Bulletproof
+- https://docs.pydantic.dev
+- Python library for data validation. Define your Fractal JSON schema as a Pydantic model and it validates every LLM response automatically. If the model returns garbage, Pydantic catches it before it ever reaches the frontend. Used by FastAPI natively — they work together perfectly.
+
+```python
+from pydantic import BaseModel
+from typing import List
+
+class Domain(BaseModel):
+    name: str
+    summary: str
+
+class Tension(BaseModel):
+    source: str
+    target: str
+    relationship: str
+
+class EmergentPattern(BaseModel):
+    label: str
+    summary: str
+
+class FractalMap(BaseModel):
+    domains: List[Domain]
+    tensions: List[Tension]
+    emergent_pattern: EmergentPattern
+```
+Pass this to Ollama's `format` parameter and you get perfectly structured maps every time.
+
+### HTTPie — Better Than Postman for Testing APIs
+- https://httpie.io
+- A terminal-based API testing tool that's cleaner than curl and lighter than Postman. When you're testing your FastAPI endpoint locally, this is the fastest way to fire requests and see responses.
+
+### Ngrok — Share Your Local Dev With Anyone Instantly
+- https://ngrok.com
+- One command turns your `localhost:8000` into a public URL anyone can access. Perfect for showing teammates your local Fractal build without deploying. Free tier is all you need.
+
+### Hugging Face Spaces — Free Demo Hosting
+- https://huggingface.co/spaces
+- Hugging Face lets you host interactive AI demos for free with a GPU. If Groq ever has rate limit issues for a demo, you can host a Gradio or Streamlit version of Fractal here as a backup. Used by thousands of AI researchers for exactly this.
+
+### LangChain — If Your Backend Gets More Complex
+- https://python.langchain.com
+- A framework for chaining LLM calls together. Right now Fractal makes one API call per query. If you ever want to add memory, multi-step reasoning, or retrieval from documents, LangChain makes that much easier. Not needed now, but good to know it exists.
+
+### Observable / D3 Observable Notebooks
+- https://observablehq.com
+- The same team that makes D3 built an online notebook for data visualization experiments. If you want to prototype how a new graph layout looks before coding it into Fractal, do it here first. Fast, free, shareable.
+
+---
+
+## 5. LEARNING RESOURCES WORTH BOOKMARKING
+
+| Resource | What It's For | URL |
+|---|---|---|
+| vis.js examples | Styling your graph nodes and edges | https://visjs.github.io/vis-network/examples/ |
+| Groq quickstart | Get your API key and first call running | https://console.groq.com/docs/quickstart |
+| Ollama structured output | Lock your LLM output to your JSON schema | https://docs.ollama.com/capabilities/structured-outputs |
+| LLM + D3 force graph | Someone already built near-identical concept | https://github.com/jzaragosa06/fdg-and-ai |
+| 3D force graph library | Future upgrade path for the visualization | https://github.com/vasturiano/3d-force-graph |
+| Instructor library | Bulletproof structured output from any LLM | https://python.useinstructor.com/integrations/ollama/ |
+| Render FastAPI deploy | Host your backend for free | https://render.com/articles/fastapi-deployment-options |
+| Pydantic docs | Validate every LLM response automatically | https://docs.pydantic.dev |
+| Obsidian | Design reference for graph UI/UX | https://obsidian.md |
+| InfraNodus | Mature AI knowledge graph product reference | https://infranodus.com |
+
+---
+
+## 6. THE ONE THING TO DO THIS WEEK
+
+Go to https://github.com/jzaragosa06/fdg-and-ai and read every line of that repo. Someone already built Fractal V0.5 — LLM generates structured node/edge data, D3 renders a force-directed graph. Their live demo is at https://fdg-and-ai.onrender.com/
+
+You don't copy it. You understand it, then build something better with your Wikipedia Map frontend and Groq/Ollama backend. This is your clearest proof of concept reference in the wild.
