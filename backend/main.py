@@ -168,6 +168,8 @@ async def call_groq(query: str) -> dict:
 
 # ── APP ──────────────────────────────────────────────────
 app = FastAPI(title="Fractal API")
+from fastapi.staticfiles import StaticFiles
+app.mount("/static", StaticFiles(directory="../", html=True), name="static")    
 
 app.add_middleware(
     CORSMiddleware,
