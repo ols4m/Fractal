@@ -102,9 +102,9 @@ function expandNodeCallback(page, data) {
 // Expand a node without freezing other stuff
 function expandNode(id) {
   const pagename = unwrap(nodes.get(id).label);
-  getSubPages(pagename).then(({ redirectedTo, links }) => {
-    const newId = renameNode(id, redirectedTo);
-    expandNodeCallback(newId, links);
+  getSubPages(pagename).then((pages) => {
+    
+    expandNodeCallback(id, pages);
   });
   // Mark the expanded node as 'locked' if it's one of the commafield items
   const cf = document.getElementById('input');
