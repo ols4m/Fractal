@@ -1,0 +1,188 @@
+/* ── GLOBAL ─────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #0a0a0f !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #f0f0f0;
+}
+
+/* ── GRAPH CONTAINER ─────────────────────────────────── */
+#container {
+  background: #0a0a0f !important;
+  background: radial-gradient(ellipse at center, #0f0f1a 0%, #0a0a0f 100%) !important;
+}
+
+canvas {
+  background: transparent !important;
+}
+
+/* ── TOP BAR ─────────────────────────────────────────── */
+#formbox {
+  background: rgba(10, 10, 20, 0.92) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+  backdrop-filter: blur(16px);
+}
+
+.commafield {
+  background: rgba(255,255,255,0.05) !important;
+  color: #f0f0f0 !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-radius: 8px !important;
+}
+
+.commafield .item {
+  background: rgba(255,255,255,0.1) !important;
+  color: #f0f0f0 !important;
+  border-radius: 4px !important;
+}
+
+/* ── MAP BUTTON ──────────────────────────────────────── */
+#submit {
+  background: linear-gradient(135deg, #4A90D9, #7B6CF6) !important;
+  border: none !important;
+  color: white !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  transition: opacity 0.2s !important;
+}
+
+#submit:hover {
+  opacity: 0.85 !important;
+}
+
+/* ── BUTTONS ─────────────────────────────────────────── */
+#buttons {
+  background: rgba(10, 10, 20, 0.92) !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  border-radius: 12px !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+#buttons button {
+  color: #888 !important;
+  transition: color 0.2s !important;
+}
+
+#buttons button:hover {
+  color: #fff !important;
+}
+
+/* ── WELCOME BOX ─────────────────────────────────────── */
+#info {
+  background: rgba(10, 10, 20, 0.95) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 16px !important;
+  padding: 40px 48px !important;
+  max-width: 520px !important;
+  text-align: center !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+#info h1 {
+  font-size: 2.8rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.03em !important;
+  background: linear-gradient(135deg, #4A90D9 0%, #00c6ff 100%);
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  margin-bottom: 12px !important;
+}
+
+#info p {
+  color: #b0b0b0 !important;
+  font-size: 1rem !important;
+  line-height: 1.6 !important;
+}
+
+.shepbtn {
+  background: rgba(255,255,255,0.08) !important;
+  color: #a0a0a0 !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-radius: 6px !important;
+  padding: 8px 16px !important;
+  margin-top: 16px !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+}
+
+.shepbtn:hover {
+  background: rgba(255,255,255,0.14) !important;
+  color: #fff !important;
+}
+
+/* ── NODE INFO PANEL ─────────────────────────────────── */
+.node-panel {
+  position: fixed !important;
+  bottom: 32px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  background: rgba(10, 10, 20, 0.97) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-radius: 14px !important;
+  padding: 20px 28px !important;
+  max-width: 480px !important;
+  width: 90% !important;
+  z-index: 1000 !important;
+  backdrop-filter: blur(16px) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
+}
+
+.node-panel.hidden {
+  display: none !important;
+}
+
+.node-panel h3 {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  margin: 0 0 8px 0 !important;
+}
+
+.node-panel p {
+  font-size: 0.88rem !important;
+  color: #a0a0a0 !important;
+  line-height: 1.6 !important;
+  margin: 0 !important;
+}
+
+.node-panel-close {
+  position: absolute !important;
+  top: 12px !important;
+  right: 14px !important;
+  background: none !important;
+  border: none !important;
+  color: #555 !important;
+  cursor: pointer !important;
+  font-size: 0.9rem !important;
+}
+
+.node-panel-close:hover {
+  color: #aaa !important;
+}
+
+/* ── FORCE DARK BACKGROUND ───────────────────────────── */
+html, body {
+  background: #0a0a0f !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 100% !important;
+  width: 100% !important;
+}
+
+#container {
+  background: #0a0a0f !important;
+}
+
+div[id="container"] {
+  background: #0a0a0f !important;
+}
+
+/* Force vis.js canvas background */
+canvas {
+  background-color: #0a0a0f !important;
+  background: #0a0a0f !important;
+}

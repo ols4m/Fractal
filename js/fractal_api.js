@@ -66,3 +66,61 @@ async function getRandomArticle() {
   ];
   return randomQueries[Math.floor(Math.random() * randomQueries.length)];
 }
+
+// ── THEME TOGGLE ─────────────────────────────────────
+function initThemeToggle() {
+  const btn = document.getElementById('theme-toggle');
+  let isDark = true;
+
+  function applyTheme() {
+    const bg = isDark ? '#0a0a0f' : '#ffffff';
+    const fg = isDark ? '#f0f0f0' : '#1a1a1a';
+
+    document.body.style.background = bg;
+    document.getElementById('container').style.background = bg;
+
+    // Update all UI elements
+    const formbox = document.getElementById('formbox');
+    const info = document.getElementById('info');
+    if (formbox) formbox.style.background = isDark ? 'rgba(10,10,20,0.92)' : 'rgba(255,255,255,0.92)';
+    if (info) info.style.background = isDark ? 'rgba(10,10,20,0.95)' : 'rgba(255,255,255,0.95)';
+    if (info) info.style.color = fg;
+    document.querySelectorAll('#info p, #info h1').forEach(el => el.style.color = fg);
+
+    // Update all UI elements
+    const formbox = document.getElementById('formbox');
+    const info = document.getElementById('info');
+    if (formbox) formbox.style.background = isDark ? 'rgba(10,10,20,0.92)' : 'rgba(255,255,255,0.92)';
+    if (info) info.style.background = isDark ? 'rgba(10,10,20,0.95)' : 'rgba(255,255,255,0.95)';
+    if (info) info.style.color = fg;
+    document.querySelectorAll('#info p, #info h1').forEach(el => el.style.color = fg);
+
+    // Update vis.js canvas background
+    const canvas = document.querySelector('#container canvas');
+    if (canvas) canvas.style.background = bg;
+
+    // Update network background if it exists
+    if (window.network) {
+      window.network.setOptions({
+        nodes: {
+          font: { color: fg }
+        }
+      });
+      window.network.redraw();
+    }
+
+    btn.querySelector('i').className = isDark
+      ? 'icon ion-ios-moon'
+      : 'icon ion-ios-sunny';
+  }
+
+  btn.addEventListener('click', function() {
+    isDark = !isDark;
+    applyTheme();
+  });
+
+  // Apply dark theme on load
+  applyTheme();
+}
+
+

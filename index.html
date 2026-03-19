@@ -49,6 +49,9 @@
 
   <!-- Bottom right buttons -->
   <div id="buttons" class="button-container transparent-blur">
+    <button id="theme-toggle" type="button" title="Toggle dark/light mode">
+      <i class="icon ion-ios-sunny"></i>
+    </button>
     <button id="github" type="button" title="View Fractal on GitHub">
       <i class="icon ion-social-github"></i>
     </button>
@@ -88,7 +91,7 @@
 
   <!-- Fractal Scripts -->
   <!-- fractal_api.js REPLACES wikipedia_parse.js -->
-  <script type="text/javascript" src="./js/fractal_api.js"></script>
+  <script type="text/javascript" src="./js/fractal_api.js?v=2"></script>
   <script type="text/javascript" src="./js/helpers.js"></script>
   <script type="text/javascript" src="./js/main_functions.js"></script>
   <script type="text/javascript" src="./js/main.js"></script>
@@ -124,6 +127,8 @@
       document.getElementById("node-panel-close").addEventListener("click", function () {
         document.getElementById("node-panel").classList.add("hidden");
       });
+
+      setTimeout(function() { initThemeToggle(); }, 300);
     };
   </script>
 

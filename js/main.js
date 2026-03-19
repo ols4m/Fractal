@@ -14,6 +14,8 @@ window.startpages = [];
 const container = document.getElementById('container');
 // Global options
 const options = {
+  autoResize: true,
+  autoResize: true,
   nodes: {
     shape: 'dot',
     scaling: {
@@ -28,6 +30,10 @@ const options = {
     hoverConnectedEdges: false,
     selectConnectedEdges: true,
   },
+  edges: {
+    color: { color: '#2a2a3a', highlight: '#7B6CF6', hover: '#7B6CF6' },
+    smooth: { type: 'continuous' }
+  },
 };
 
 nodes = new vis.DataSet();
@@ -40,6 +46,8 @@ let initialized = false;
 function makeNetwork() {
   if (initialized) throw new Error('Network is already initialized');
   network = new vis.Network(container, data, options);
+  network.setOptions({ configure: { enabled: false } });
+  document.querySelector('#container canvas').style.background = '#0a0a0f';
   bindNetwork();
 
   window.startpages = [];

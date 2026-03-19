@@ -17,10 +17,10 @@ print(f"Starting Fractal backend in [{ENVIRONMENT.upper()}] mode")
 
 DEMO_MODE = {
     "nodes": [
-        {"id":"1","name":"Domain A","summary":"A core structural force.","color":"#4A90D9"},
-        {"id":"2","name":"Domain B","summary":"A competing force.","color":"#50C878"},
-        {"id":"3","name":"Domain C","summary":"A third tension.","color":"#E8A838"},
-        {"id":"4","name":"Emergent Pattern","summary":"The hidden dynamic.","color":"#888888"},
+        {"id":"1","name":"Domain A (DEMO)","summary":"A core structural force.","color":"#4A90D9"},
+        {"id":"2","name":"Domain B (DEMO)","summary":"A competing force.","color":"#50C878"},
+        {"id":"3","name":"Domain C (DEMO)","summary":"A third tension.","color":"#E8A838"},
+        {"id":"4","name":"Emergent Pattern (DEMO)","summary":"The hidden dynamic.","color":"#888888"},
     ],
     "edges": [
         {"source":"1","target":"2","relationship":"tension"},
