@@ -1,35 +1,39 @@
 # Fractal — Agent Notebook
 
 ## Original LLM + Backend Strategy
+
 *(See original notes below for FastAPI + structured JSON output approach)*
 
----
+-----
 
 ## Frontend: Wikipedia Map (controversial/wikipedia-map)
 
 **Repo:** https://github.com/controversial/wikipedia-map
 **License:** Open source — fork freely
 
----
+-----
 
 ### What It Is
 
-A web app that visualizes connections between topics as an interactive node graph. The user enters a topic, a node appears, they click to expand it, and new connected nodes branch out. This is essentially the same interaction model Fractal needs — it's a near-perfect base to build on.
+A web app that visualizes connections between topics as an interactive node graph. The user enters a topic, a node appears, they click to expand it, and new connected nodes branch out. This is essentially the same interaction model Fractal needs — it’s a near-perfect base to build on.
 
----
+-----
 
-### Tech Stack (What's Inside)
+### Tech Stack (What’s Inside)
 
 **Graph Rendering:**
+
 - `vis.js` (vis-network) — the core graph library that draws and animates all nodes and edges
 - Hosted via CDN: `https://cdnjs.cloudflare.com/ajax/libs/vis/4.16.1/vis-network.min.js`
 
 **UI Libraries:**
+
 - `shepherd.js` — guided tour/onboarding for users
 - `ionicons` — icon set for buttons (GitHub, help, shuffle, trash icons)
 - `clipboard.js` — copy-to-clipboard functionality
 
 **Frontend Files:**
+
 ```
 index.html              ← main entry point, loads everything
 css/
@@ -55,7 +59,7 @@ js/
   progress.js           ← loading bar logic
 ```
 
----
+-----
 
 ### How It Works (Original Flow)
 
@@ -68,7 +72,7 @@ User types topic → clicks Go
 → user clicks a node → expands further
 ```
 
----
+-----
 
 ### How To Adapt It For Fractal
 
@@ -96,26 +100,27 @@ async function getSubPages(query) {
 
 Everything else — the graph rendering, the click-to-expand, the animations, the UI — stays exactly the same.
 
----
+-----
 
 ### What To Customize For Fractal Branding
 
-| File | What To Change |
-|---|---|
-| `index.html` | Title, meta description, welcome message text |
-| `css/style.css` | Background color, font, overall aesthetic |
-| `css/bar.css` | Search bar appearance, placeholder text |
-| `css/welcome.css` | Landing message ("Wikipedia Map" → "Fractal") |
-| `js/wikipedia_parse.js` | Replace entirely with `fractal_api.js` |
-| `js/help.js` | Update tutorial text to describe Fractal, not Wikipedia |
-| `js/main_functions.js` | Node colors — map domain colors to Fractal's color scheme |
+|File                   |What To Change                                           |
+|-----------------------|---------------------------------------------------------|
+|`index.html`           |Title, meta description, welcome message text            |
+|`css/style.css`        |Background color, font, overall aesthetic                |
+|`css/bar.css`          |Search bar appearance, placeholder text                  |
+|`css/welcome.css`      |Landing message (“Wikipedia Map” → “Fractal”)            |
+|`js/wikipedia_parse.js`|Replace entirely with `fractal_api.js`                   |
+|`js/help.js`           |Update tutorial text to describe Fractal, not Wikipedia  |
+|`js/main_functions.js` |Node colors — map domain colors to Fractal’s color scheme|
 
-**Node color logic** lives in `main_functions.js`. Currently colors nodes by distance from center. For Fractal you'll want to color by:
+**Node color logic** lives in `main_functions.js`. Currently colors nodes by distance from center. For Fractal you’ll want to color by:
+
 - Domain nodes → their assigned color (blue, green, etc.)
 - Emergent/grey node → grey
 - Tension edges → styled differently than regular connections
 
----
+-----
 
 ### What To Keep Exactly As-Is
 
@@ -125,40 +130,43 @@ Everything else — the graph rendering, the click-to-expand, the animations, th
 - `commafield.js` — multi-topic input is useful for Fractal too
 - `modals.js` and `progress.js` — loading states and modals are needed
 
----
+-----
 
 ### Step-by-Step Integration Plan
 
 1. **Fork the repo** into your own GitHub
-2. **Clone it locally** — open `index.html` in browser to confirm it works with Wikipedia first
-3. **Create `js/fractal_api.js`** — replaces `wikipedia_parse.js`, points to your backend
-4. **Update `index.html`** — swap `wikipedia_parse.js` script tag for `fractal_api.js`
-5. **Restyle** — update CSS files and welcome text for Fractal branding
-6. **Update node colors** in `main_functions.js` to match Fractal's color scheme
-7. **Test locally** with Ollama backend running
-8. **Deploy** pointing to Groq backend for the live demo
+1. **Clone it locally** — open `index.html` in browser to confirm it works with Wikipedia first
+1. **Create `js/fractal_api.js`** — replaces `wikipedia_parse.js`, points to your backend
+1. **Update `index.html`** — swap `wikipedia_parse.js` script tag for `fractal_api.js`
+1. **Restyle** — update CSS files and welcome text for Fractal branding
+1. **Update node colors** in `main_functions.js` to match Fractal’s color scheme
+1. **Test locally** with Ollama backend running
+1. **Deploy** pointing to Groq backend for the live demo
 
----
+-----
 
 ### Important Note on Licensing
 
 This repo is open source. You can fork and modify it freely. You should:
+
 - Keep a note in your code crediting the original (`vis.js` graph rendering based on wikipedia-map by Luke Deen Taylor)
 - Remove all Wikipedia-specific branding from the UI
 - The core logic is yours to adapt
 
----
+-----
 
 ## Original LLM Backend Strategy (FastAPI + Groq/Ollama)
 
 *(Original AgentNotebook content preserved below)*
 
----
+-----
 
 ### Goal
+
 Use an LLM to generate structured domain nodes, suggest tensions, and create 1 emergent grey synthesis. You control the structure.
 
 ### LLM Prompt Schema
+
 ```json
 {
   "domains": [{"name": "", "summary": ""}],
@@ -168,6 +176,7 @@ Use an LLM to generate structured domain nodes, suggest tensions, and create 1 e
 ```
 
 ### FastAPI Endpoint (swap OpenAI for Groq)
+
 ```python
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -268,158 +277,952 @@ Query: {request.query}
 
 ### Dev vs Prod Config
 
-| Setting | Ollama (Dev) | Groq (Prod) |
-|---|---|---|
-| API URL | http://localhost:11434/api/chat | https://api.groq.com/openai/v1/chat/completions |
-| API Key | none | GROQ_API_KEY env var |
-| Model | llama3 | llama3-8b-8192 |
+|Setting|Ollama (Dev)                   |Groq (Prod)                                    |
+|-------|-------------------------------|-----------------------------------------------|
+|API URL|http://localhost:11434/api/chat|https://api.groq.com/openai/v1/chat/completions|
+|API Key|none                           |GROQ_API_KEY env var                           |
+|Model  |llama3                         |llama3-8b-8192                                 |
 
 Change only these 3 lines to switch between environments.
 
-# Fractal — Deep Dive Resource Guide
-*Curated resources most developers don't know about, organized by what they help you build*
+-----
 
----
+## Raspberry Pi Local Dev Server
 
-## 1. GRAPH VISUALIZATION
+### Concept
 
-### vis.js Network — Your Current Library
-- **Official examples gallery:** https://visjs.github.io/vis-network/examples/
-  - This is gold. Every edge style, node shape, color group, clustering behavior — all shown with live code. Spend an hour here before touching any styling code.
-- **Full network documentation:** https://visjs.github.io/vis-network/docs/
-  - Node groups are the key feature for Fractal — you can assign nodes to groups and style each group differently. This is exactly how you'd color domain nodes vs the grey emergent node.
-- **CodeSandbox examples:** https://codesandbox.io/examples/package/vis-network
-  - Live editable examples including a Vue + Flask integration that's very close to Fractal's stack
+A Raspberry Pi running Ollama as a shared local AI server for the whole team. Everyone connects to it over WiFi/Ethernet instead of running Ollama on their own machines.
 
-### D3.js Force Graph — The Upgrade Path
-If you ever outgrow vis.js or want more visual control, D3 is the next level. It's harder but gives you pixel-perfect control over everything.
-- **D3 force directed graph:** https://d3js.org/d3-force
-  - The physics engine behind most interactive knowledge graphs on the web
-- **3D force graph (vasturiano):** https://github.com/vasturiano/3d-force-graph
-  - Someone built a beautiful 3D version of exactly what Fractal does using D3 + ThreeJS. Has React bindings. This is worth studying deeply — it's basically a more advanced Fractal.
-- **LLM + D3 force graph (almost exactly Fractal):** https://medium.com/@junjunzaragosa2309/using-llm-to-generate-data-for-d3-js-force-directed-graph-c490382d1172
-  - A developer built the exact same concept — LLM generates nodes and links, D3 renders them. Their source code is on GitHub: https://github.com/jzaragosa06/fdg-and-ai and live demo on Render. Study this carefully.
+### How It Works
 
-### Obsidian Graph View — Design Inspiration
-Obsidian is a note-taking app but its graph view is exactly the aesthetic Fractal should aim for. It's the most beloved graph UI in the developer world.
-- **Obsidian graph view:** https://obsidian.md
-  - Download and use it for free. Study how nodes cluster, how clicking feels, how the physics behaves. This is your design reference.
-- **InfraNodus — AI + graph:** https://infranodus.com
-  - A tool that adds AI-powered gap detection to knowledge graphs. Very close to Fractal's vision. Not open source but useful to understand what the product looks like when it's mature.
-
----
-
-## 2. LLM BACKEND
-
-### Groq — Your Production API
-- **Official quickstart:** https://console.groq.com/docs/quickstart
-  - Get an API key and make your first call in under 10 minutes. Use `llama-3.3-70b-versatile` as the model — it's their best free-tier model right now.
-- **JSON mode on Groq:** Pass `response_format: {"type": "json_object"}` in your API call — Groq supports this natively, which means cleaner structured output for Fractal maps without extra parsing work.
-
-### Ollama — Your Dev Environment
-- **Structured outputs official docs:** https://docs.ollama.com/capabilities/structured-outputs
-  - Ollama now natively supports JSON schema enforcement. Pass your Fractal JSON schema directly to the `format` parameter and the model is *forced* to return valid JSON matching your schema. This is huge — no more broken JSON crashing your graph.
-- **Practical JSON guide:** https://voipnuggets.com/2025/12/30/how-to-get-structured-json-responses-from-a-llm-using-ollama/
-  - Short, practical, shows both simple JSON mode and strict schema enforcement
-- **Production-grade structured output pipeline:** https://markaicode.com/ollama-structured-output-pipeline/
-  - The honest guide — covers what breaks at scale (6% failure rate at 10k calls/day), how to add Pydantic validation + retry loops, and when to switch to grammar-constrained generation. Read before you go to production.
-
-### Instructor — The Pro Tool for Structured Output
-- **Instructor + Ollama:** https://python.useinstructor.com/integrations/ollama/
-  - Instructor is a Python library that wraps Ollama/OpenAI and guarantees structured output using Pydantic models. It adds automatic retry logic when the model returns bad JSON. For Fractal's backend this is a 10-line upgrade that makes your JSON output rock solid. Highly recommended.
-
----
-
-## 3. DEPLOYMENT
-
-### Render — Best Free Tier for Your Backend
-- **FastAPI on Render:** https://render.com/articles/fastapi-deployment-options
-  - Render has a free tier with 750 hours/month — enough to keep your FastAPI backend always on. Render is the better choice for Fractal right now because Railway removed its free tier in 2024.
-- **Key caveat:** Free tier spins down after 15 minutes of inactivity, causing a 10–30 second cold start on first request. For a demo this is fine. For production upgrade to $7/month to keep it always on.
-
-### Railway — Fast Deployment, No Free Tier
-- **FastAPI on Railway:** https://docs.railway.com/guides/fastapi
-  - Railway is faster to deploy and has a better developer UI, but no free tier anymore — only a small one-time $5 credit. Use this if someone on the team has $5 to spend, it's worth it for the experience.
-- **Railway vs Render honest breakdown:** https://designrevision.com/blog/render-vs-railway
-  - The clearest comparison written recently. Short verdict: Render for free/predictable costs, Railway for speed and flexibility.
-
-### Vercel — Best for Your Frontend
-- Your Wikipedia Map frontend is static HTML/JS — Vercel deploys it for free in seconds with zero configuration. Just connect the GitHub repo and push.
-- https://vercel.com — free static hosting, global CDN, automatic SSL
-
----
-
-## 4. HIDDEN GEM TOOLS YOUR TEAM SHOULD KNOW ABOUT
-
-### Pydantic — Make Your Backend Bulletproof
-- https://docs.pydantic.dev
-- Python library for data validation. Define your Fractal JSON schema as a Pydantic model and it validates every LLM response automatically. If the model returns garbage, Pydantic catches it before it ever reaches the frontend. Used by FastAPI natively — they work together perfectly.
-
-```python
-from pydantic import BaseModel
-from typing import List
-
-class Domain(BaseModel):
-    name: str
-    summary: str
-
-class Tension(BaseModel):
-    source: str
-    target: str
-    relationship: str
-
-class EmergentPattern(BaseModel):
-    label: str
-    summary: str
-
-class FractalMap(BaseModel):
-    domains: List[Domain]
-    tensions: List[Tension]
-    emergent_pattern: EmergentPattern
 ```
-Pass this to Ollama's `format` parameter and you get perfectly structured maps every time.
+Team laptops → Pi's IP address → Ollama running on Pi → returns JSON to backend
+```
 
-### HTTPie — Better Than Postman for Testing APIs
-- https://httpie.io
-- A terminal-based API testing tool that's cleaner than curl and lighter than Postman. When you're testing your FastAPI endpoint locally, this is the fastest way to fire requests and see responses.
+Update `.env` on each machine:
 
-### Ngrok — Share Your Local Dev With Anyone Instantly
-- https://ngrok.com
-- One command turns your `localhost:8000` into a public URL anyone can access. Perfect for showing teammates your local Fractal build without deploying. Free tier is all you need.
+```
+ENVIRONMENT=dev
+OLLAMA_URL=http://192.168.1.X:11434/api/chat
+```
 
-### Hugging Face Spaces — Free Demo Hosting
-- https://huggingface.co/spaces
-- Hugging Face lets you host interactive AI demos for free with a GPU. If Groq ever has rate limit issues for a demo, you can host a Gradio or Streamlit version of Fractal here as a backup. Used by thousands of AI researchers for exactly this.
+Where `192.168.1.X` is the Pi’s local network IP.
 
-### LangChain — If Your Backend Gets More Complex
-- https://python.langchain.com
-- A framework for chaining LLM calls together. Right now Fractal makes one API call per query. If you ever want to add memory, multi-step reasoning, or retrieval from documents, LangChain makes that much easier. Not needed now, but good to know it exists.
+### Hardware Recommendation
 
-### Observable / D3 Observable Notebooks
-- https://observablehq.com
-- The same team that makes D3 built an online notebook for data visualization experiments. If you want to prototype how a new graph layout looks before coding it into Fractal, do it here first. Fast, free, shareable.
+- **Raspberry Pi 5 8GB** — best option (~$80)
+- **Ethernet connection** — eliminates network latency (bottleneck is inference not network)
+- **Coral USB TPU** (~$60) — USB AI accelerator, cuts inference time significantly
+- **Model: Llama 3.2 3B** — 2GB, runs on Pi, good enough for dev/testing
 
----
+### Realistic Performance
 
-## 5. LEARNING RESOURCES WORTH BOOKMARKING
+- Pi 4 basic: 30-60 seconds per map
+- Pi 5 + Coral TPU: 5-10 seconds per map
+- Good enough for development, not for production
 
-| Resource | What It's For | URL |
-|---|---|---|
-| vis.js examples | Styling your graph nodes and edges | https://visjs.github.io/vis-network/examples/ |
-| Groq quickstart | Get your API key and first call running | https://console.groq.com/docs/quickstart |
-| Ollama structured output | Lock your LLM output to your JSON schema | https://docs.ollama.com/capabilities/structured-outputs |
-| LLM + D3 force graph | Someone already built near-identical concept | https://github.com/jzaragosa06/fdg-and-ai |
-| 3D force graph library | Future upgrade path for the visualization | https://github.com/vasturiano/3d-force-graph |
-| Instructor library | Bulletproof structured output from any LLM | https://python.useinstructor.com/integrations/ollama/ |
-| Render FastAPI deploy | Host your backend for free | https://render.com/articles/fastapi-deployment-options |
-| Pydantic docs | Validate every LLM response automatically | https://docs.pydantic.dev |
-| Obsidian | Design reference for graph UI/UX | https://obsidian.md |
-| InfraNodus | Mature AI knowledge graph product reference | https://infranodus.com |
+### Why This Is Worth It
 
----
+- Free unlimited dev queries — no Groq API costs during development
+- Whole team shares one server — no one installs Ollama locally
+- Always on — plug it in, leave it running
+- Total cost: ~$150 one time vs ongoing API costs
 
-## 6. THE ONE THING TO DO THIS WEEK
+### When To Do This
 
-Go to https://github.com/jzaragosa06/fdg-and-ai and read every line of that repo. Someone already built Fractal V0.5 — LLM generates structured node/edge data, D3 renders a force-directed graph. Their live demo is at https://fdg-and-ai.onrender.com/
+After Priority 3 (product stability) is done and the team is actively building features daily. Not needed for the prototype stage.
 
-You don't copy it. You understand it, then build something better with your Wikipedia Map frontend and Groq/Ollama backend. This is your clearest proof of concept reference in the wild.
+-----
+
+## Loader Animation — Three Body (from Uiverse.io)
+
+Source: https://uiverse.io by dovatgabriel
+Color updated to match Fractal node blue: `#4A90D9`
+
+### HTML
+
+```html
+<div class="three-body">
+  <div class="three-body__dot"></div>
+  <div class="three-body__dot"></div>
+  <div class="three-body__dot"></div>
+</div>
+```
+
+### CSS
+
+```css
+/* ── FRACTAL LOADER ──────────────────────────────────── */
+.three-body {
+  --uib-size: 35px;
+  --uib-speed: 0.8s;
+  --uib-color: #4A90D9;
+  position: relative;
+  display: inline-block;
+  height: var(--uib-size);
+  width: var(--uib-size);
+  animation: spin78236 calc(var(--uib-speed) * 2.5) infinite linear;
+}
+
+.three-body__dot {
+  position: absolute;
+  height: 100%;
+  width: 30%;
+}
+
+.three-body__dot:after {
+  content: '';
+  position: absolute;
+  height: 0%;
+  width: 100%;
+  padding-bottom: 100%;
+  background-color: var(--uib-color);
+  border-radius: 50%;
+}
+
+.three-body__dot:nth-child(1) {
+  bottom: 5%;
+  left: 0;
+  transform: rotate(60deg);
+  transform-origin: 50% 85%;
+}
+
+.three-body__dot:nth-child(1)::after {
+  bottom: 0;
+  left: 0;
+  animation: wobble1 var(--uib-speed) infinite ease-in-out;
+  animation-delay: calc(var(--uib-speed) * -0.3);
+}
+
+.three-body__dot:nth-child(2) {
+  bottom: 5%;
+  right: 0;
+  transform: rotate(-60deg);
+  transform-origin: 50% 85%;
+}
+
+.three-body__dot:nth-child(2)::after {
+  bottom: 0;
+  left: 0;
+  animation: wobble1 var(--uib-speed) infinite calc(var(--uib-speed) * -0.15) ease-in-out;
+}
+
+.three-body__dot:nth-child(3) {
+  bottom: -5%;
+  left: 0;
+  transform: translateX(116.666%);
+}
+
+.three-body__dot:nth-child(3)::after {
+  top: 0;
+  left: 0;
+  animation: wobble2 var(--uib-speed) infinite ease-in-out;
+}
+
+@keyframes spin78236 {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes wobble1 {
+  0%, 100% { transform: translateY(0%) scale(1); opacity: 1; }
+  50%       { transform: translateY(-66%) scale(0.65); opacity: 0.8; }
+}
+
+@keyframes wobble2 {
+  0%, 100% { transform: translateY(0%) scale(1); opacity: 1; }
+  50%       { transform: translateY(66%) scale(0.65); opacity: 0.8; }
+}
+```
+
+### Implementation Notes
+
+- Show this loader centered on screen while waiting for the AI to generate a map
+- Hide it once nodes appear on the graph
+- Wrap in a `#fractal-loader` div positioned fixed center screen
+- Add `display: none` by default, show with JS when Map button is clicked
+- Hide again when `getSubPages` returns data
+
+-----
+
+## Fractal Intro Card (from Uiverse.io by seoulchik — customized for Fractal)
+
+This is the welcome/intro card that displays when Fractal loads. Blue header, centered FRACTAL title, description, feature grid with app buttons, and centered Get Started button.
+
+### Implementation Notes
+
+- Replace the current `#info` welcome box in `index.html` with this card
+- The Get Started button should dismiss the card and focus the search bar
+- Keep the hover animation — it lifts and shifts on hover which feels premium
+- The accent shape in the bottom right can be hidden if too busy on mobile
+
+### Full Code
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fractal Card</title>
+<link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+<style>
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0a0a0f;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+  }
+
+  .card {
+    --primary: #4A90D9;
+    --primary-hover: #5aa0e9;
+    --secondary: #4A90D9;
+    --secondary-hover: #5aa0e9;
+    --accent: #00c6ff;
+    --text: #050505;
+    --bg: #ffffff;
+    --shadow-color: #000000;
+    --pattern-color: #cfcfcf;
+
+    position: relative;
+    width: 20em;
+    background: var(--bg);
+    border: 0.35em solid var(--text);
+    border-radius: 0.6em;
+    box-shadow: 0.7em 0.7em 0 var(--shadow-color), inset 0 0 0 0.15em rgba(0,0,0,0.05);
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    overflow: hidden;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    transform-origin: center;
+  }
+
+  .card:hover {
+    transform: translate(-0.4em, -0.4em) scale(1.02);
+    box-shadow: 1em 1em 0 var(--shadow-color);
+  }
+
+  .card:hover .card-pattern-grid,
+  .card:hover .card-overlay-dots { opacity: 1; }
+
+  .card:active {
+    transform: translate(0.1em, 0.1em) scale(0.98);
+    box-shadow: 0.5em 0.5em 0 var(--shadow-color);
+  }
+
+  .card-pattern-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px);
+    background-size: 0.5em 0.5em;
+    pointer-events: none;
+    opacity: 0.5;
+    transition: opacity 0.4s ease;
+    z-index: 1;
+  }
+
+  .card-overlay-dots {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(var(--pattern-color) 1px, transparent 1px);
+    background-size: 1em 1em;
+    background-position: -0.5em -0.5em;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    z-index: 1;
+  }
+
+  .card-title-area {
+    position: relative;
+    padding: 1.4em;
+    background: var(--primary);
+    color: var(--bg);
+    font-weight: 800;
+    font-size: 1.6em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-bottom: 0.35em solid var(--text);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    z-index: 2;
+    overflow: hidden;
+  }
+
+  .card-title-area::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: repeating-linear-gradient(45deg, rgba(0,0,0,0.1), rgba(0,0,0,0.1) 0.5em, transparent 0.5em, transparent 1em);
+    pointer-events: none;
+    opacity: 0.3;
+  }
+
+  .card-body { position: relative; padding: 1.5em; z-index: 2; }
+
+  .card-description {
+    margin-bottom: 1.5em;
+    color: var(--text);
+    font-size: 0.95em;
+    line-height: 1.4;
+    font-weight: 500;
+    text-align: center;
+  }
+
+  .feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1em;
+    margin-bottom: 1.5em;
+  }
+
+  .feature-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    transition: transform 0.2s ease;
+  }
+
+  .feature-item:hover { transform: translateX(0.3em); }
+
+  .feature-icon {
+    width: 1.4em; height: 1.4em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--secondary);
+    border: 0.12em solid var(--text);
+    border-radius: 0.3em;
+    box-shadow: 0.2em 0.2em 0 rgba(0,0,0,0.2);
+    transition: all 0.2s ease;
+    font-size: 0.85em;
+  }
+
+  .feature-item:hover .feature-icon {
+    background: var(--secondary-hover);
+    transform: rotate(-5deg);
+  }
+
+  .feature-text { font-size: 0.85em; font-weight: 600; color: var(--text); }
+
+  .card-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 1.5em;
+    padding-top: 1.2em;
+    border-top: 0.15em dashed rgba(0,0,0,0.15);
+  }
+
+  .card-button {
+    position: relative;
+    background: var(--secondary);
+    color: var(--bg);
+    font-size: 0.9em;
+    font-weight: 700;
+    padding: 0.7em 2em;
+    border: 0.2em solid var(--text);
+    border-radius: 0.4em;
+    box-shadow: 0.3em 0.3em 0 var(--shadow-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .card-button:hover {
+    background: var(--secondary-hover);
+    transform: translate(-0.1em, -0.1em);
+    box-shadow: 0.4em 0.4em 0 var(--shadow-color);
+  }
+
+  .card-button:active {
+    transform: translate(0.1em, 0.1em);
+    box-shadow: 0.15em 0.15em 0 var(--shadow-color);
+  }
+
+  .accent-shape {
+    position: absolute;
+    width: 2.5em; height: 2.5em;
+    background: var(--secondary);
+    border: 0.15em solid var(--text);
+    border-radius: 0.3em;
+    transform: rotate(45deg);
+    bottom: -1.2em; right: 2em;
+    z-index: 0;
+    transition: transform 0.3s ease;
+  }
+
+  .card:hover .accent-shape { transform: rotate(55deg) scale(1.1); }
+
+  .corner-slice {
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 1.5em; height: 1.5em;
+    background: var(--bg);
+    border-right: 0.25em solid var(--text);
+    border-top: 0.25em solid var(--text);
+    border-radius: 0 0.5em 0 0;
+    z-index: 1;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="card-pattern-grid"></div>
+  <div class="card-overlay-dots"></div>
+  <div class="card-title-area">Fractal</div>
+  <div class="card-body">
+    <p class="card-description">
+      Ask any big question. Fractal maps the forces, tensions, and hidden patterns shaping it.
+    </p>
+    <div class="feature-grid">
+      <div class="feature-item">
+        <div class="feature-icon">
+          <svg viewBox="0 0 98 96" width="14" height="14" fill="white"><path fill-rule="evenodd" clip-rule="evenodd" d="M48.854 0C21.839 0 0 22 0 49.217c0 21.756 13.993 40.172 33.405 46.69 2.427.49 3.316-1.059 3.316-2.362 0-1.141-.08-5.052-.08-9.127-13.59 2.934-16.42-5.867-16.42-5.867-2.184-5.704-5.42-7.17-5.42-7.17-4.448-3.015.324-3.015.324-3.015 4.934.326 7.523 5.052 7.523 5.052 4.367 7.496 11.404 5.378 14.235 4.074.404-3.178 1.699-5.378 3.074-6.6-10.839-1.141-22.243-5.378-22.243-24.283 0-5.378 1.94-9.778 5.014-13.2-.485-1.222-2.184-6.275.486-13.038 0 0 4.125-1.304 13.426 5.052a46.97 46.97 0 0 1 12.214-1.63c4.125 0 8.33.571 12.213 1.63 9.302-6.356 13.427-5.052 13.427-5.052 2.67 6.763.97 11.816.485 13.038 3.155 3.422 5.015 7.822 5.015 13.2 0 18.905-11.404 23.06-22.324 24.283 1.78 1.548 3.316 4.481 3.316 9.126 0 6.6-.08 11.897-.08 13.526 0 1.304.89 2.853 3.316 2.364 19.412-6.52 33.405-24.935 33.405-46.691C97.707 22 75.788 0 48.854 0z"/></svg>
+        </div>
+        <span class="feature-text">GitHub</span>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="white"><path d="M21 5H3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1zm-1 12H4V7h16v10zm-3-7H7v2h10v-2zm-4 4H7v2h6v-2z"/></svg>
+        </div>
+        <span class="feature-text">About</span>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="white"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm0-14a6 6 0 1 0 0 12A6 6 0 0 0 12 6zm0 10a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/></svg>
+        </div>
+        <span class="feature-text">Theme</span>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-5h2v2h-2zm1-10C9.79 5 8 6.79 8 9h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg>
+        </div>
+        <span class="feature-text">Help</span>
+      </div>
+    </div>
+    <div class="card-actions">
+      <button class="card-button">Get Started</button>
+    </div>
+  </div>
+  <div class="accent-shape"></div>
+  <div class="corner-slice"></div>
+</div>
+</body>
+</html>
+```
+
+-----
+
+## Node Summary Panel Card (from Uiverse.io by vaibhavchandranv — customized for Fractal)
+
+This card appears when a user clicks on a node. Shows the node name and type badge in the header, AI summary in the body, and Explore/Close buttons. Two variants: domain nodes (blue header) and emergent pattern node (grey header).
+
+### Implementation Notes
+
+- Replaces current `.node-panel` at bottom of screen
+- Position fixed, bottom center of screen
+- `.node-card-head-title` shows node name (truncates with ellipsis if too long)
+- `.node-card-type` badge shows “Domain” or “Emergent”
+- `.node-card-summary` shows `getFractalNodeSummary(nodeName)`
+- Explore button for future expand functionality, Close button hides the card
+- Add `.emergent` class to card for grey header on emergent nodes
+
+### Full Code
+
+See `fractal_node_card.html` artifact for the complete working version.
+
+Key classes:
+
+- `.node-card` — main card container (add `.emergent` for grey variant)
+- `.node-card-head` — blue/grey header bar with flex layout
+- `.node-card-head-title` — node name, truncates if too long
+- `.node-card-type` — Domain/Emergent badge, never gets cut off
+- `.node-card-content` — summary text area
+- `.node-card-button` — blue primary button (Explore)
+- `.node-card-button.secondary` — dark secondary button (Close)
+
+```
+### JS to show it when node is clicked
+```javascript
+// Add this inside the vis.js click handler in index.html
+network.on("click", function(params) {
+  if (params.nodes.length > 0) {
+    const nodeName = params.nodes[0];
+    const summary = getFractalNodeSummary(nodeName);
+    if (summary) {
+      document.getElementById('node-card-title').textContent = nodeName;
+      document.getElementById('node-card-summary').textContent = summary;
+      document.getElementById('node-card').style.display = 'block';
+    }
+  }
+});
+```
+
+-----
+
+## Brutalist Search Input (from Uiverse.io by 0xnihilism — customized for Fractal)
+
+Replaces the current commafield search bar. Has a glitch animation on focus and a pulsing border that cycles between Fractal blue and purple. The label tag above animates from tilted to straight and changes color on focus.
+
+### Customizations Made
+
+- White background → Fractal dark `#0f0f1a`
+- Black border → Fractal blue `#4A90D9`
+- Blue shadow `#4a90e2` → kept as `#4A90D9` (same shade)
+- Focus pulse → cycles between `#4A90D9` and `#7B6CF6` (Fractal blue → accent purple)
+- Label background → `#4A90D9`, turns `#7B6CF6` on focus
+- Placeholder text → “Ask Fractal anything…”
+- Text color → white `#ffffff`
+
+### Implementation Notes
+
+- Replace the `.commafield` div in `index.html` with this input
+- Width should be `100%` inside the `#formbox` container
+- The label “FRACTAL SEARCH” sits above the input and animates on focus
+- The glitch effect on focus gives it personality without being distracting
+- On mobile reduce font-size to 14px
+
+### Key CSS Variables To Tweak
+
+```css
+border: 4px solid #4A90D9;          /* border color */
+box-shadow: 5px 5px 0 #000, 10px 10px 0 #4A90D9;  /* shadow layers */
+background-color: #0f0f1a;          /* input background */
+color: #ffffff;                     /* text color */
+```
+
+### Full Code
+
+See `fractal_search_input.html` artifact for the complete working version with all animations.
+
+-----
+
+## Brutalist Search Input — Final Version (from Uiverse.io by 0xnihilism — customized for Fractal)
+
+Replaces the current commafield search bar. Type and hit Enter to create a brutalist blue tag. Hover a tag to reveal the ✕ delete button. Backspace on empty input deletes the last tag. Border pulses between Fractal blue and purple on focus.
+
+### Behavior
+
+- Type anything → hit **Enter** → creates a blue brutalist square tag
+- **Hover** a tag → ✕ appears → **click** to delete it
+- **Backspace** on empty input → deletes last tag
+- Border pulses `#4A90D9` ↔ `#7B6CF6` while focused
+- No label — clean and minimal
+
+### Implementation Notes
+
+- Replace the `.commafield` div and `commafield.js` entirely with this
+- The `#field` div acts as the container, `#typing` is the real input
+- Tags are created dynamically via JS — no library needed
+- When user clicks Map, collect all `.search-tag span:first-child` text values as the query array
+- Width should be `100%` inside `#formbox`
+
+### Collect tags for Map button
+
+```javascript
+function getSearchTags() {
+  const tags = document.querySelectorAll('.search-tag span:first-child');
+  return Array.from(tags).map(t => t.textContent.trim());
+}
+// Returns array like ["why do empires fall", "democracy"]
+```
+
+### Full Code
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<style>
+  .brutalist-container {
+    position: relative;
+    width: 100%;
+    font-family: monospace;
+  }
+
+  .brutalist-field {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #ffffff;
+    background-color: #0f0f1a;
+    border: 4px solid #4A90D9;
+    outline: none;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 5px 5px 0 #000, 10px 10px 0 #4A90D9;
+    min-height: 52px;
+    cursor: text;
+    box-sizing: border-box;
+  }
+
+  .brutalist-field:focus-within {
+    animation: focus-pulse 4s cubic-bezier(0.25, 0.8, 0.25, 1) infinite;
+  }
+
+  .search-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: #4A90D9;
+    color: #ffffff;
+    font-family: monospace;
+    font-weight: 700;
+    font-size: 0.82em;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 4px 10px;
+    border: 2px solid #000000;
+    border-radius: 0;
+    box-shadow: 3px 3px 0 #000000;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .search-tag:hover {
+    background-color: #7B6CF6;
+    translate: 1px 1px;
+    box-shadow: 2px 2px 0 #000000;
+  }
+
+  .search-tag .delete-x {
+    font-size: 0.9em;
+    opacity: 0;
+    max-width: 0;
+    overflow: hidden;
+    transition: max-width 0.2s ease, opacity 0.2s ease;
+  }
+
+  .search-tag:hover .delete-x {
+    opacity: 1;
+    max-width: 20px;
+    padding-left: 2px;
+  }
+
+  .brutalist-typing {
+    flex: 1;
+    min-width: 80px;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #ffffff;
+    font-family: monospace;
+    font-size: 16px;
+    font-weight: bold;
+    caret-color: #4A90D9;
+    padding: 2px 0;
+  }
+
+  .brutalist-typing::placeholder { color: #444466; }
+  .brutalist-typing:focus::placeholder { color: transparent; }
+
+  @keyframes focus-pulse {
+    0%, 100% { border-color: #4A90D9; box-shadow: 5px 5px 0 #000, 10px 10px 0 #4A90D9; }
+    50%       { border-color: #7B6CF6; box-shadow: 5px 5px 0 #000, 10px 10px 0 #7B6CF6; }
+  }
+</style>
+</head>
+<body>
+  <div class="brutalist-container">
+    <div class="brutalist-field" id="field" onclick="document.getElementById('typing').focus()">
+      <input class="brutalist-typing" id="typing" type="text" placeholder="Ask Fractal anything..." />
+    </div>
+  </div>
+
+  <script>
+    const input = document.getElementById('typing');
+    const field = document.getElementById('field');
+
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && this.value.trim() !== '') {
+        e.preventDefault();
+        createTag(this.value.trim());
+        this.value = '';
+      }
+      if (e.key === 'Backspace' && this.value === '') {
+        const tags = field.querySelectorAll('.search-tag');
+        if (tags.length > 0) tags[tags.length - 1].remove();
+      }
+    });
+
+    function createTag(text) {
+      const tag = document.createElement('div');
+      tag.className = 'search-tag';
+      tag.innerHTML = '<span>' + text + '</span><span class="delete-x">✕</span>';
+      tag.addEventListener('click', function() { this.remove(); input.focus(); });
+      field.insertBefore(tag, input);
+    }
+
+    function getSearchTags() {
+      const tags = document.querySelectorAll('.search-tag span:first-child');
+      return Array.from(tags).map(t => t.textContent.trim());
+    }
+  </script>
+</body>
+</html>
+```
+
+-----
+
+## Fractal Action Buttons — Map, Random, Trash (from Uiverse.io by byllzz — customized for Fractal)
+
+Three buttons using the same wobbly brutalist checkbox style. Replaces the current Map, shuffle, and trash buttons in `#formbox`.
+
+### Button Colors
+
+- **MAP** — Fractal blue `#4A90D9`, shows “…” while generating
+- **⇄ Random** — Green `#50C878`, quick flash on click
+- **✕ Trash** — Red `#E05C5C`, quick flash on click
+
+### Behavior
+
+- MAP: click → fills blue, shows “…” → snaps back when map is done
+- Random: click → flashes green → triggers random query
+- Trash: click → flashes red → clears the map
+- All three: hover rotates slightly, active press pushes down
+
+### Implementation Notes
+
+- Replace `#submit`, `#random`, `#clear` buttons in `index.html` with these
+- Keep the same button IDs so `bindings.js` still works
+- Call `btn.classList.add('active')` when API call starts
+- Call `btn.classList.remove('active')` when API call resolves
+- MAP button text changes to “…” during generation
+
+### Full CSS + HTML
+
+```html
+<!-- HTML -->
+<button class="fractal-btn" id="submit" onclick="triggerMap()">MAP</button>
+<button class="fractal-btn random" id="random">⇄</button>
+<button class="fractal-btn trash" id="clear" style="display:none;">✕</button>
+
+<style>
+.fractal-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  width: 52px;
+  height: 52px;
+  background-color: #0f0f1a;
+  border: 4px solid #4A90D9;
+  border-radius: 8% 92% 12% 88% / 87% 11% 89% 13%;
+  box-shadow: 5px 5px 0px #000000;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+              box-shadow 0.2s, background-color 0.2s, border-color 0.2s;
+  font-family: monospace;
+  font-weight: 900;
+  font-size: 11px;
+  color: #4A90D9;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  outline: none;
+}
+
+.fractal-btn:hover {
+  transform: scale(1.05) rotate(2deg);
+  border-color: #7B6CF6;
+  color: #7B6CF6;
+}
+
+.fractal-btn:active {
+  transform: scale(0.9) translateY(4px);
+  box-shadow: 0px 0px 0px #000000;
+}
+
+.fractal-btn.active {
+  background-color: #4A90D9;
+  border-color: #4A90D9;
+  border-radius: 92% 8% 88% 12% / 11% 87% 13% 89%;
+  transform: scale(1.1) rotate(-2deg);
+  color: #ffffff;
+  animation: btn-pulse 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes btn-pulse {
+  0%   { box-shadow: 5px 5px 0px #000; }
+  100% { box-shadow: 5px 5px 0px #7B6CF6; border-color: #7B6CF6; }
+}
+
+.fractal-btn.trash { border-color: #E05C5C; color: #E05C5C; }
+.fractal-btn.trash:hover { border-color: #ff7777; color: #ff7777; }
+.fractal-btn.trash.active { background-color: #E05C5C; border-color: #E05C5C; color: #ffffff; }
+
+.fractal-btn.random { border-color: #50C878; color: #50C878; font-size: 18px; }
+.fractal-btn.random:hover { border-color: #7deaa0; color: #7deaa0; }
+.fractal-btn.random.active { background-color: #50C878; border-color: #50C878; color: #ffffff; }
+</style>
+```
+
+-----
+
+## Fractal Button Stack — Bottom Right Panel
+
+Stacked panel for the bottom right of the app. Contains theme toggle (moon/sun), GitHub, About, and Help. Hover any button to slide it left and reveal a tooltip. Theme button animates between moon and sun icon and turns purple in light mode.
+
+### Behavior
+
+- Hover → button slides left, tooltip appears to the left
+- Theme button → click toggles moon ↔ sun, turns purple in light mode
+- All buttons share borders for a connected card feel
+- Divider separates theme toggle from the other three
+
+### Implementation Notes
+
+- Replace the current `#buttons` div in `index.html` with this stack
+- Keep `id="github"`, `id="about"`, `id="help"` on the right buttons so `bindings.js` still works
+- Connect theme toggle click to `initThemeToggle()` in `fractal_api.js`
+
+### Full Code
+
+See `fractal_button_stack.html` artifact for the complete working version.
+
+### Key Classes
+
+- `.btn-stack` — the container
+- `.stack-btn` — base button style
+- `.stack-btn.theme-active` — purple state when light mode is on
+- `.stack-divider` — black bar between theme and other buttons
+- `data-tip` attribute — sets the tooltip text
+
+-----
+
+## Fractal Background Pattern (from Uiverse.io by themrsami — customized for Fractal)
+
+Subtle dot grid background for both light and dark mode. Dots are tiny (1px) and very low opacity so they add texture without being distracting.
+
+### Light Mode
+
+```css
+background-color: #f8f8fc;
+background-image via ::before: radial-gradient(circle, rgba(0,0,0,0.08) 1px, transparent 1px);
+background-size: 28px 28px;
+```
+
+### Dark Mode
+
+```css
+background-color: #0a0a0f;
+background-image via ::before: radial-gradient(circle, rgba(74,144,217,0.12) 1px, transparent 1px);
+background-size: 28px 28px;
+```
+
+### Implementation Notes
+
+- Add `position: relative` and `overflow: hidden` to `#container`
+- Apply the `::before` pseudo-element to `#container` in `fractal.css`
+- Switch between light and dark dot colors in `applyTheme()` in `fractal_api.js`
+- Keep dot opacity very low — it should feel like texture not pattern
+
+### Full CSS
+
+```css
+#container {
+  position: relative;
+  overflow: hidden;
+}
+
+#container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(circle, rgba(74,144,217,0.12) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+  z-index: 0;
+}
+```
+
+### Switch in applyTheme()
+
+```javascript
+const containerBefore = document.querySelector('#container');
+if (containerBefore) {
+  containerBefore.style.setProperty('--dot-color',
+    isDark ? 'rgba(74,144,217,0.12)' : 'rgba(0,0,0,0.08)');
+}
+```
+
+-----
+
+## Fractal Explore Panel — Version B Selected (Floating Card)
+
+Both versions contain the same content and brutalist card style. Decision pending on which to implement.
+
+### Decision
+
+Going with Version B — Floating Card. Fits the brutalist card language better and does not block the graph.
+
+### Content
+
+- AI Summary
+- Key Facts (quote cards with purple left border)
+- Connected Nodes (chips, emergent node styled differently)
+- Related Links (with source and arrow)
+- Further Reading (numbered list)
+
+### Version A — Full Sidebar
+
+Slides in from the right edge, full screen height, shares the left border with the app edge. Feels more like a traditional side panel. Good for desktop.
+
+```
+position: fixed;
+top: 0; right: 0;
+width: 260-340px;
+height: 100%;
+border-left: 3px solid #4A90D9;
+box-shadow: -8px 0 0 #000;
+transition: right 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+```
+
+### Version B — Floating Card
+
+Floats vertically centered, slides in from the right with a gap from the edge. Matches the brutalist card style (border + shadow on all sides). Good for mobile and tablet.
+
+```
+position: fixed;
+top: 50%; right: 24px;
+transform: translateY(-50%);
+width: 320px;
+max-height: 85vh;
+border: 3px solid #4A90D9;
+box-shadow: 12px 12px 0 #000;
+transition: right 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+```
+
+### Shared Panel CSS
+
+```css
+.panel-header { background: #4A90D9; border-bottom: 3px solid #000; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.section-head { padding: 7px 14px; font-size: 9px; font-weight: 900; color: #4A90D9; text-transform: uppercase; letter-spacing: 0.12em; border-bottom: 2px solid #1a1a2e; }
+.quote-card { background: #0a0a0f; border-left: 3px solid #7B6CF6; padding: 8px 10px; box-shadow: 3px 3px 0 #000; }
+.node-chip { border: 2px solid #4A90D9; color: #4A90D9; font-size: 9px; font-weight: 700; padding: 3px 7px; box-shadow: 2px 2px 0 #000; }
+.node-chip.emergent { border-color: #555566; color: #888899; }
+.reading-num { font-size: 9px; font-weight: 900; color: #7B6CF6; }
+```
+
+### See full working versions in artifacts
+
+- `fractal_explore_panel.html` — Version B (floating)
+- `fractal_panel_comparison.html` — Side by side comparison

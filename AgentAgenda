@@ -1,0 +1,154 @@
+# Fractal — Agent Agenda
+
+Two sections:
+
+- **Sprint Tasks** — specific, doable in 1-3 sessions, hands on keyboard work
+- **Roadmap** — broader features and vision, planned but not immediate
+
+-----
+
+## SPRINT TASKS
+
+*Specific changes. Each one is a real coding task.*
+
+-----
+
+### Sprint 1 — One-Shot Architecture + Reveal Mechanic
+
+**Goal:** Redesign how the map renders. Generate everything at once but reveal it progressively as the user explores.
+
+- [ ] Remove click-to-expand API call from `js/main_functions.js`
+- [ ] On Map button → single API call → all nodes and edges returned at once
+- [ ] All nodes and edges render immediately but **grayed out and opaque** (not visible yet)
+- [ ] Center/search node is fully visible and vibrant from the start
+- [ ] Single click on a grayed node → node “pops alive” with full color and vibrance
+- [ ] When node pops → show summary panel with node details, links, and map connections
+- [ ] Connected edges to that node also pop alive when node is clicked
+- [ ] Apply Fractal colors from AI response to each node (not Wikipedia depth colors)
+- [ ] Grey emergent node styled distinctly — larger, different border
+- [ ] Demo mode nodes labeled clearly — append `(DEMO)` to each node name so team knows immediately when backend is not connecting correctly e.g. “Domain A (DEMO)”, “Emergent Pattern (DEMO)”
+
+-----
+
+### Sprint 2 — Click Interaction Redesign
+
+**Goal:** Replace Wikipedia Map’s double/single click behavior with Fractal’s own interaction model.
+
+- [ ] **Single click** → select node, open small options menu with buttons:
+  - Summary
+  - Links
+  - Map Connections
+  - Node Settings
+- [ ] **Double click** → quick generate (same as current Map button but for that node’s context)
+- [ ] **Select two nodes** → force a connection between them manually
+  - Show a “Connect” button when two nodes are selected simultaneously
+  - Add edge between them with a custom relationship label
+
+-----
+
+### Sprint 3 — Visual Polish
+
+**Goal:** Make it look like a real product, not a Wikipedia clone.
+
+- [ ] Fix dark background — `fractal.css` is loaded but white background still showing
+- [ ] Node colors from AI response applied correctly
+- [ ] Edge styles — tension edges vs shapes edges look visually different
+- [ ] Loading state — spinner or animated progress while AI generates
+- [ ] Node pop animation — smooth transition from grey/opaque to full color
+- [ ] Summary panel — clean design, shows node name, summary, and connection info
+
+-----
+
+### Sprint 4 — README Redesign
+
+**Goal:** Rewrite the README to reflect what Fractal actually is now.
+
+- [ ] Remove all Wikipedia Map references
+- [ ] Describe Fractal’s vision clearly — idea synthesis, not search
+- [ ] Add screenshot of a working map
+- [ ] Add setup instructions for new contributors
+- [ ] Add architecture diagram (one-shot flow)
+- [ ] Add section on the reveal mechanic and why it was designed that way
+
+-----
+
+### Sprint 5 — Deployment
+
+**Goal:** Get it live for anyone to use without a Codespace.
+
+- [ ] Deploy backend to Render (free tier)
+- [ ] Deploy frontend to Vercel (free)
+- [ ] Update `fractal_api.js` to point to Render URL permanently
+- [ ] Set Groq API key as Render environment variable (never in code)
+- [ ] Test end to end on deployed version
+- [ ] Share live link with team and early users
+
+-----
+
+## ROADMAP
+
+*Bigger features and vision. Not immediate but planned.*
+
+-----
+
+### Venn Diagram Visualization Mode
+
+A second visualization type alongside the current graph. The AI groups nodes into overlapping Venn diagram circles to show similarities and shared properties between domains rather than tensions and connections.
+
+- User can toggle between Graph View and Venn View
+- AI prompt needs a second output format for groupings
+- Venn diagram rendered using D3.js or a dedicated library
+- Great for showing where two domains share common ground vs where they diverge
+- Could be a killer feature for academic and research users
+
+-----
+
+### Context-Aware Expansion (Future Architecture)
+
+Each node click sends the entire existing map as context to the AI so it builds genuinely on what’s already there. Infinite AND coherent. Aligns with Fractal’s mission of not giving AI limited context.
+
+- Higher token cost — only viable at paid Groq tier or self-hosted model
+- Revisit when product has real users and token budget
+- This is the architecture that makes Fractal feel like a thinking machine, not a static map
+
+-----
+
+### Raspberry Pi Local Dev Server
+
+Shared team AI server so no one needs to run Ollama locally or use API credits during development. See AgentNotebook for full hardware specs and setup instructions.
+
+- Pi 5 8GB + Coral TPU + Llama 3.2 3B
+- ~5-10 seconds per map in dev
+- ~$150 one time cost
+- Set up after Sprint 5 when team is actively building daily
+
+-----
+
+### User Accounts and Saved Maps
+
+- Save maps to an account
+- Share maps via URL (network_serialize.js already built for this)
+- Map history and revisiting past sessions
+- Collaborative maps — multiple users on same map
+
+-----
+
+### Fine-Tuning Pipeline
+
+Once real user maps are collected:
+
+- Use Groq/GPT-4 to generate synthetic training data
+- Collect engagement signals from real users
+- Fine-tune Llama 3.2 on Fractal-specific map quality
+- Self-host fine-tuned model to cut costs at scale
+
+-----
+
+## COMPUTATIONAL TASKS
+
+*Bunny — computational tasks that don’t require deep technical knowledge. Run scripts, generate data, stress test.*
+
+- [ ] Set up Raspberry Pi server for the team (full guide in AgentNotebook)
+- [ ] Run synthetic training data generation — script will be provided, point it at a list of 500 diverse queries, let Ollama run overnight, saves JSON responses as future fine-tuning dataset
+- [ ] Stress test the backend — run the same query 100 times in a row, report if anything breaks or slows down
+- [ ] If Bunny has a GPU — run local fine-tuning on the synthetic dataset once it’s collected (guide will be provided)
