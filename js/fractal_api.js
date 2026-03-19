@@ -116,7 +116,7 @@ function checkDemoMode(nodes) {
     if (!banner) {
       banner = document.createElement('div');
       banner.id = 'demo-banner';
-      banner.textContent = '⚠ DEMO MODE — AI not connected';
+      banner.innerHTML = '<span class="demo-dot"></span>DEMO MODE — AI not connected';
       document.body.appendChild(banner);
     }
   } else {

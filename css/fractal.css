@@ -33,6 +33,7 @@ html, body {
   caret-color: #4A90D9 !important;
 }
 
+
 /* ── MAP BUTTON ──────────────────────────────────────── */
 #submit {
   background: linear-gradient(135deg, #4A90D9, #7B6CF6) !important;
@@ -143,16 +144,31 @@ html, body {
   top: 60px !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
-  background: rgba(255, 170, 0, 0.15) !important;
-  border: 1px solid rgba(255, 170, 0, 0.4) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  background: #0f0f1a !important;
+  border: 3px solid #ffaa00 !important;
+  box-shadow: 4px 4px 0 #000000 !important;
+  padding: 7px 16px !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
   color: #ffaa00 !important;
-  font-size: 0.75rem !important;
-  font-weight: 600 !important;
-  padding: 6px 16px !important;
-  border-radius: 20px !important;
-  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  border-radius: 0 !important;
   z-index: 999 !important;
-  backdrop-filter: blur(8px) !important;
+  animation: banner-pulse 2s ease-in-out infinite !important;
+}
+
+@keyframes banner-pulse {
+  0%, 100% { border-color: #ffaa00; box-shadow: 4px 4px 0 #000; }
+  50% { border-color: #ffcc44; box-shadow: 4px 4px 0 #000, 0 0 12px rgba(255,170,0,0.3); }
+}
+
+@keyframes dot-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
 }
 
 /* ── RESTORE FRACTAL TITLE GRADIENT ─────────────────── */
@@ -176,4 +192,42 @@ html, body {
 
 #formbox {
   color: #ffffff !important;
+}
+
+/* ── GRAPH CONTAINER ─────────────────────────────────── */
+#container {
+  background: #0a0a0f !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+#container::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background-image: radial-gradient(circle, rgba(74,144,217,0.12) 1px, transparent 1px) !important;
+  background-size: 28px 28px !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+
+canvas {
+  background-color: #0a0a0f !important;
+}
+
+@keyframes dot-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.2; }
+}
+
+.demo-dot {
+  width: 7px !important;
+  height: 7px !important;
+  background: #ffaa00 !important;
+  display: inline-block !important;
+  flex-shrink: 0 !important;
+  animation: dot-blink 1s ease-in-out infinite !important;
 }
