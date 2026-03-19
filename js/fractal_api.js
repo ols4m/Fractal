@@ -20,9 +20,13 @@ async function getSubPages(query) {
       };
     });
     window.fractalEdgeData = data.edges;
-    return data.nodes.map(node => node.name);
+    const names = data.nodes.map(node => node.name);
+    checkDemoMode(names);
+    return names;
+
   } catch (err) {
     console.error("Fractal API unreachable:", err);
+    checkDemoMode(["(DEMO)"]);
     return getFallbackNodes();
   }
 }
@@ -40,7 +44,7 @@ function getFractalNodeSummary(nodeName) {
 }
 
 function getFallbackNodes() {
-  return ["Structural Force", "Competing Pressure", "Hidden Constraint", "Emergent Pattern"];
+  return ["Structural Force (DEMO)", "Competing Pressure (DEMO)", "Hidden Constraint (DEMO)", "Emergent Pattern (DEMO)"];
 }
 
 async function fetchPageTitle(query) {
@@ -97,4 +101,20 @@ function initThemeToggle() {
   });
 
   applyTheme();
+}
+
+// ── DEMO MODE DETECTION ───────────────────────────────
+function checkDemoMode(nodes) {
+  const isDemo = nodes.some(n => n.includes('(DEMO)'));
+  let banner = document.getElementById('demo-banner');
+  if (isDemo) {
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'demo-banner';
+      banner.textContent = '⚠ DEMO MODE — AI not connected';
+      document.body.appendChild(banner);
+    }
+  } else {
+    if (banner) banner.remove();
+  }
 }
