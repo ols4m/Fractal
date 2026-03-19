@@ -23,7 +23,7 @@ const options = {
       max: 30,
       label: { min: 14, max: 30, drawThreshold: 9, maxVisible: 20 },
     },
-    font: { size: 14, face: getComputedStyle(document.body).fontFamily },
+    font: { size: 14, face: getComputedStyle(document.body).fontFamily, color: '#e8e8f0' },
   },
   interaction: {
     hover: true,

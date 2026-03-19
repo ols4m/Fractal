@@ -93,6 +93,11 @@ function initThemeToggle() {
     }
 
     btn.querySelector('i').className = isDark ? 'icon ion-ios-moon' : 'icon ion-ios-sunny';
+
+    // Fix input text color for both modes
+    document.querySelectorAll('.commafield input').forEach(el => {
+      el.style.color = isDark ? '#ffffff' : '#1a1a2e';
+    });
   }
 
   btn.addEventListener('click', function() {
