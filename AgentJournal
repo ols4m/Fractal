@@ -1,26 +1,29 @@
 # Fractal — Agent Journal
 
 ## About This Journal
+
 This journal documents progress throughout the Fractal project. When tokens run out or a new agent picks up the work, refer back here to understand where things left off and where to continue.
 
----
+-----
 
 ## Project Summary
+
 Fractal is an AI-powered idea synthesis tool that maps relationships between concepts and presents them as an expandable visual network. It is not a search engine — it shows structural forces, tensions, and emergent patterns shaping a big question.
 
 **Current Status:** Demo built with hardcoded data for one query. Basic node/edge visual rendering works. Next step is connecting a live LLM backend.
 
----
+-----
 
 ## Architecture Decision: Two Paths
 
 ### The Core Decision
+
 - **Ollama** = local development environment (free, offline, your machine)
 - **Groq** = deployed demo/mockup (free tier API, internet accessible, real users)
 
 Same underlying model (Llama 3) runs in both places, keeping behavior consistent.
 
----
+-----
 
 ## Path 1 — Development Architecture (Ollama)
 
@@ -43,6 +46,7 @@ Developer Machine
 ```
 
 **Key points:**
+
 - Nothing leaves your machine
 - No API keys needed
 - No rate limits
@@ -50,7 +54,7 @@ Developer Machine
 - Use this to build, test, and iterate on prompts
 - Break things freely here — no consequences
 
----
+-----
 
 ## Path 2 — Production/Demo Architecture (Groq)
 
@@ -73,29 +77,30 @@ User (anywhere in the world)
 ```
 
 **Key points:**
+
 - Groq free tier handles solid demo traffic
 - Fast — Groq is actually faster than OpenAI
 - Swap from Ollama to Groq = change API URL + API key + model name (~10 min)
 - When free tier runs out, paid Groq is much cheaper than OpenAI/Anthropic
 - This is what investors, users, and your team interact with
 
----
+-----
 
 ## Switching Between Paths
 
 The only things that change between Ollama (dev) and Groq (prod):
 
-| | Ollama (Dev) | Groq (Prod) |
-|---|---|---|
-| API URL | http://localhost:11434 | https://api.groq.com |
-| API Key | none needed | GROQ_API_KEY |
-| Model name | llama3 | llama3-8b-8192 |
-| Who can access | only you | everyone |
-| Cost | free | free tier → then low cost |
+|              |Ollama (Dev)          |Groq (Prod)              |
+|--------------|----------------------|-------------------------|
+|API URL       |http://localhost:11434|https://api.groq.com     |
+|API Key       |none needed           |GROQ_API_KEY             |
+|Model name    |llama3                |llama3-8b-8192           |
+|Who can access|only you              |everyone                 |
+|Cost          |free                  |free tier → then low cost|
 
 Everything else — the prompt, the JSON schema, the validation logic, the frontend — stays identical.
 
----
+-----
 
 ## Future Architecture (Scale Stage — 100k+ users)
 
@@ -111,37 +116,326 @@ User → Frontend → Backend → Fine-tuned Llama 3 (self-hosted on GPU server)
 ```
 
 **How to get training data when you have none:**
-1. Use GPT-4 or Claude to generate 500+ high quality Fractal maps synthetically
-2. Review and curate the good ones
-3. Launch on Groq API and collect real user maps + engagement signals
-4. Combine synthetic + real data → fine-tune Llama 3
-5. Self-host the fine-tuned model → costs drop dramatically
 
----
+1. Use GPT-4 or Claude to generate 500+ high quality Fractal maps synthetically
+1. Review and curate the good ones
+1. Launch on Groq API and collect real user maps + engagement signals
+1. Combine synthetic + real data → fine-tune Llama 3
+1. Self-host the fine-tuned model → costs drop dramatically
+
+-----
 
 ## LLM Decision Summary
 
-| Stage | Solution | Cost |
-|---|---|---|
-| Building now | Ollama locally | Free |
-| Demo / mockup | Groq free tier | Free |
-| Early growth | Groq paid | Low |
-| 100k+ users | Fine-tuned Llama 3, self-hosted | Flat rate, much cheaper |
-| Never | Train from scratch | Not worth it at any stage |
+|Stage        |Solution                       |Cost                     |
+|-------------|-------------------------------|-------------------------|
+|Building now |Ollama locally                 |Free                     |
+|Demo / mockup|Groq free tier                 |Free                     |
+|Early growth |Groq paid                      |Low                      |
+|100k+ users  |Fine-tuned Llama 3, self-hosted|Flat rate, much cheaper  |
+|Never        |Train from scratch             |Not worth it at any stage|
 
----
+-----
 
-## Where We Left Off
+## Session 1 — Where We Left Off
+
 - Hardcoded demo working with basic node/edge rendering
 - Architecture decision made: Ollama for dev, Groq for deployed demo
 - Backend structure already drafted in AgentNotebook (FastAPI endpoint with JSON prompt, validation, and DEMO_MODE fallback)
 - Next step: wire up the existing backend template to Ollama locally, test structured JSON output, then swap to Groq for deployment
 
----
+-----
+
+## Session 2 — March 10 2026
+
+### What Was Accomplished
+
+Took Fractal from a hardcoded demo to a real working codebase. Full repo is now live at:
+`https://github.com/ols4m/Fractal`
+
+**Files added to repo:**
+
+- Cloned Wikipedia Map frontend as the graph engine base
+- `backend/main.py` — FastAPI backend, handles Ollama (dev) and Groq (prod) automatically
+- `backend/requirements.txt` — Python dependencies
+- `backend/.env.example` — environment config template
+- `js/fractal_api.js` — replaces `wikipedia_parse.js`, calls Fractal backend instead of Wikipedia
+- `css/fractal.css` — Fractal dark theme branding
+- `index.html` — replaced with Fractal branded version
+- `setup.sh` — auto-installs everything on any new machine
+- `.gitignore` — ignores `.env`, `__pycache__`, `.venv`
+- `wikipedia_parse.js` — deleted, replaced by `fractal_api.js`
+
+**Backend confirmed working:**
+
+- Uvicorn runs cleanly from `/workspaces/Fractal/backend`
+- Returns `200 OK`
+- Starts in DEV mode correctly
+- Virtual environment at `/workspaces/Fractal/.venv`
+
+### Where We Stopped
+
+The very last step — updating `fractal_api.js` with the Codespace URL.
+
+Currently `fractal_api.js` line 4 still points to:
+
+```javascript
+const FRACTAL_API_URL = "http://localhost:8000/generate-map";
+```
+
+This needs to be changed to the Codespace URL:
+
+```javascript
+const FRACTAL_API_URL = "https://expert-space-succotash-4jj95xvvrqj9fjj44-8000.app.github.dev/generate-map";
+```
+
+**Important:** The Codespace URL changes every session. Always check the Ports tab in VS Code for the current port 8000 URL before starting.
+
+-----
+
+## Session 3 — March 11 2026
+
+### What Was Accomplished
+
+`fractal_api.js` was empty from last session — fixed by writing the file directly via terminal using `cat > EOF`. Updated the Codespace URL inside `fractal_api.js` to point to the live backend. All files confirmed to have content. Repo fully committed and pushed at `https://github.com/ols4m/Fractal`.
+
+Frontend loads correctly — the tutorial/shepherd tour works confirming all Wikipedia Map JS files are loading properly.
+
+### Where We Stopped
+
+Clicking Map does nothing. The issue is the backend needs to be running at the same time as the frontend. Ran out of time before testing both running simultaneously.
+
+-----
 
 ## Next Agent Picks Up From
-1. Take the FastAPI backend from AgentNotebook
-2. Replace OpenAI references with Ollama endpoint (localhost:11434)
-3. Test with a few queries locally — confirm JSON schema comes back clean
-4. Once working locally, swap to Groq API for deployed version
-5. Connect to the existing frontend graph renderer
+
+### Step 1 — Check the Codespace URL has changed
+
+Every new session the Codespace URL changes. Get the new one from the Ports tab in VS Code (port 8000) and update `fractal_api.js`:
+
+```bash
+sed -i 's|https://expert-space-succotash-4jj95xvvrqj9fjj44-8000.app.github.dev/generate-map|YOUR_NEW_CODESPACE_URL/generate-map|g' /workspaces/Fractal/js/fractal_api.js
+```
+
+Confirm it changed:
+
+```bash
+cat /workspaces/Fractal/js/fractal_api.js | head -3
+```
+
+### Step 2 — Start the backend in Terminal 1
+
+```bash
+cd /workspaces/Fractal/backend
+source /workspaces/Fractal/.venv/bin/activate
+uvicorn main:app --reload
+```
+
+Leave this running. Do not close this terminal.
+
+### Step 3 — Serve the frontend in Terminal 2
+
+Open a second terminal with `Ctrl+Shift+`` then:
+
+```bash
+cd /workspaces/Fractal
+python3 -m http.server 3000
+```
+
+### Step 4 — Open the frontend in browser
+
+Go to Ports tab, find port `3000`, open that URL in the browser. Type any question and click Map.
+
+### Step 5 — If Map button still does nothing
+
+Open browser developer tools with `Cmd+Option+I`, click the Console tab, try clicking Map again and paste any red errors here for debugging.
+
+### Step 6 — If the graph renders but looks wrong
+
+Check `js/main_functions.js` — the node color logic needs a small override to use Fractal colors instead of Wikipedia depth-based colors. See `WikipediaMap_FileBreakdown.md` for the exact edit.
+
+-----
+
+## Session 4 — March 17 2026
+
+### What Was Accomplished
+
+**Fractal is fully working.** Real AI nodes are generating from any query using Groq.
+
+Key fixes made this session:
+
+- Rewrote `main.py` cleanly from scratch using `cat > EOF` to fix all corruption issues
+- Fixed `expandNode` in `main_functions.js` to use Fractal API response format instead of Wikipedia format
+- Added `fetchPageTitle` and `getRandomArticle` compatibility functions to `fractal_api.js`
+- Fixed Groq model — `llama3-8b-8192` was decommissioned, updated to `llama-3.3-70b-versatile`
+- Fixed `.env` space issue that was breaking the API key loading
+- Removed `.env` from git tracking — API key is now local only, never pushed to GitHub
+- Added `backend/.env` to `.gitignore`
+
+### Current State
+
+- Backend runs in PROD mode connecting to Groq
+- Real AI synthesized nodes generate for any query
+- Frontend renders the graph correctly
+- Repo is clean and pushed at `https://github.com/ols4m/Fractal`
+
+### Important Notes
+
+- Groq model: `llama-3.3-70b-versatile`
+- `.env` is NOT in the repo — must be recreated on any new machine
+- `.env` lives at `backend/.env` and must contain:
+
+```
+ENVIRONMENT=prod
+GROQ_API_KEY=your_groq_key_here
+```
+
+- Get a free Groq key at https://console.groq.com
+
+### To Start Next Session
+
+Terminal 1 — backend:
+
+```bash
+cd /workspaces/Fractal/backend
+source /workspaces/Fractal/.venv/bin/activate
+uvicorn main:app --reload
+```
+
+Terminal 2 — frontend:
+
+```bash
+cd /workspaces/Fractal
+python3 -m http.server 3000
+```
+
+Open port 3000 URL in browser. Type any question. Click Map.
+
+### What To Work On Next
+
+- Node colors — all nodes are blue, need to apply Fractal colors from AI response
+- Dark theme — `fractal.css` is loaded but white background still showing
+- Node click panel — clicking a node should show its AI-generated summary
+- Random button — currently adds random queries as nodes, should start a fresh map instead
+
+-----
+
+## Architecture Decision — One-Shot Map Generation
+
+### Decision Made
+
+Switch from **click-to-expand** architecture to **one-shot architecture**.
+
+### Current Architecture (click-to-expand)
+
+- User enters query → center node appears
+- User clicks node → new AI call made
+- Each expansion is isolated, AI has no context of other nodes
+- 5 clicks = 5 separate API calls = 3,100 tokens per session
+- Nodes can contradict or overlap each other
+- Incoherent map structure
+
+### New Architecture (one-shot)
+
+- User enters query → one AI call generates entire map at once
+- All nodes, tensions, and emergent pattern returned in single response
+- Frontend renders everything immediately
+- Clicking nodes reveals summary — instant, no new AI calls
+- 1 session = 620 tokens total (5x fewer than current)
+- Map is coherent because AI sees the whole picture at once
+
+### Why This Is Better For Fractal
+
+- Stays true to README vision: “small number of clear core domains, meaningful overlaps, one synthesized grey node”
+- Emergent grey node genuinely synthesizes everything
+- Feels like a research field map, not a Wikipedia clone
+- Groq free tier handles ~23 maps/minute comfortably
+
+### Token Cost Analysis
+
+- Per map: ~620 tokens (320 input + 300 output)
+- Groq free tier: 14,400 tokens/minute = ~23 maps/minute free
+- At 100k users doing 5 maps/day = ~$5,500/month at scale
+- Completely free for prototype and early growth
+
+### Future Architecture To Revisit (not now)
+
+Context-aware expansion — each node click sends existing map as context so AI builds genuinely on what’s already there. Infinite AND coherent. Higher token cost but aligns with Fractal’s mission of not giving AI limited context. Revisit when product has users and token budget.
+
+### What Needs To Change In Code Next Session
+
+- Backend is already correct — no changes needed
+- Frontend needs full redesign:
+  - Remove click-to-expand behavior from `main_functions.js`
+  - On Map button → call API → render ALL nodes and edges at once
+  - Node click → show summary panel only, NO new API call
+  - Apply Fractal colors from AI response to each node
+  - Apply dark theme from `fractal.css`
+
+-----
+
+## Session 5 — March 19 2026
+
+### What Was Accomplished
+
+Major visual progress on both dark and light mode.
+
+- Dark mode background working via JavaScript `applyTheme()` function
+- Theme toggle button added to bottom right button group (moon/sun icon)
+- DEMO node labels working — fallback nodes now show `(DEMO)` suffix
+- Search bar text color fixed for both modes — white in dark, dark in light
+- Node label text color set to `#e8e8f0` in vis.js options in `main.js`
+- Full color palette established and documented in `fractal.css`
+- Edge colors updated to dark theme friendly `#2a2a3a`
+- `commafield.css` cache busting added to force browser to reload styles
+- `fractal_api.js` cache busted with `?v=3`
+
+### Color Palette Locked In
+
+```
+Dark bg:    #0a0a0f
+Light bg:   #f8f8fc
+Text dark:  #e8e8f0
+Text light: #1a1a2e
+Primary:    #4A90D9
+Accent:     #7B6CF6
+Demo:       #ffaa00
+```
+
+### What Still Needs Work
+
+- **GitHub button** links to the Wikipedia Map repo, not Fractal
+- **README** still references Wikipedia Map — needs full rewrite (Sprint 4)
+- **Tutorial** (Shepherd.js) still describes Wikipedia Map features — needs rewrite
+- **Help/About modals** reference Wikipedia — needs updating
+- **Visual identity** — still feels like a reskinned Wikipedia Map, needs more Fractal personality
+- **Fractal title gradient** — lost the blue gradient, shows plain white in some states
+- **Bottom right buttons** — background not showing consistently in light mode
+- **Stray grey dot** floating on canvas — unknown origin, needs investigation
+
+### Next Session Priorities
+
+1. Fix GitHub button URL to point to `https://github.com/ols4m/Fractal`
+1. Rewrite the Shepherd.js tutorial text to describe Fractal
+1. Update README (Sprint 4 from agenda)
+1. Continue visual cleanup — make it feel like Fractal not Wikipedia Map
+1. Start Sprint 1 — one-shot architecture + reveal mechanic
+
+### To Start Next Session
+
+Terminal 1 — backend:
+
+```bash
+cd /workspaces/Fractal/backend
+source /workspaces/Fractal/.venv/bin/activate
+uvicorn main:app --reload
+```
+
+Terminal 2 — frontend:
+
+```bash
+cd /workspaces/Fractal
+python3 -m http.server 3000
+```
+
+Open port 3000 URL in browser.
