@@ -146,7 +146,7 @@ The current version is a working prototype. Here is what is coming:
 
 **Sam** — Founder, CEO, Lead Developer
 
-**Ian** — (Came up with the idea)- Co-Founder, Lead Developer (On paper)
+**Ian** — Ideator, Co-Founder, Lead Developer (On paper)
 
 **Brieon** — Product Manager, Developer (On paper)
 
