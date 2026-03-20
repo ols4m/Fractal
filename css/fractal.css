@@ -231,3 +231,30 @@ canvas {
   flex-shrink: 0 !important;
   animation: dot-blink 1s ease-in-out infinite !important;
 }
+
+/* ── OVERRIDE bar.css button defaults ───────────────── */
+#formbox button.fractal-btn {
+  background-color: #0f0f1a !important;
+  height: 46px !important;
+  min-width: 46px !important;
+  padding: 0 !important;
+  font-size: 11px !important;
+  border-right: none !important;
+  border: 3px solid #4A90D9 !important;
+  border-radius: 8% 92% 12% 88% / 87% 11% 89% 13% !important;
+  box-shadow: 4px 4px 0px #000000 !important;
+  color: #4A90D9 !important;
+  font-family: monospace !important;
+  font-weight: 900 !important;
+}
+
+#formbox button.fractal-btn.random {
+  border-color: #50C878 !important;
+  color: #50C878 !important;
+  font-size: 18px !important;
+}
+
+#formbox button.fractal-btn.trash {
+  border-color: #E05C5C !important;
+  color: #E05C5C !important;
+}

@@ -36,14 +36,13 @@
   <!-- Top search bar -->
   <div id="formbox" class="transparent-blur">
     <div id="input" class="commafield" data-placeholder="Ask Fractal anything..."> </div>
-    <button id="submit" type="button" title="Generate a Fractal map of this idea">
-      Map
+    <button id="submit" type="button" title="Generate a Fractal map of this idea" class="fractal-btn">
+MAP</button>
+    <button id="random" type="button" title="Try a random topic" class="fractal-btn random">
+      ⇄
     </button>
-    <button id="random" type="button" title="Try a random topic">
-      <i class="icon ion-shuffle"></i>
-    </button>
-    <button id="clear" type="button" title="Clear the map" style="display: none;">
-      <i class="icon ion-trash-a"></i>
+    <button id="clear" type="button" title="Clear the map" class="fractal-btn trash" style="display: none;">
+      ✕
     </button>
   </div>
 
@@ -91,7 +90,7 @@
 
   <!-- Fractal Scripts -->
   <!-- fractal_api.js REPLACES wikipedia_parse.js -->
-  <script type="text/javascript" src="./js/fractal_api.js?v=3"></script>
+  <script type="text/javascript" src="./js/fractal_api.js?v=10"></script>
   <script type="text/javascript" src="./js/helpers.js"></script>
   <script type="text/javascript" src="./js/main_functions.js"></script>
   <script type="text/javascript" src="./js/main.js"></script>
@@ -128,7 +127,14 @@
         document.getElementById("node-panel").classList.add("hidden");
       });
 
-      setTimeout(function() { initThemeToggle(); }, 300);
+      setTimeout(function() { initThemeToggle(); }, 500);
+      // Re-apply theme after vis.js canvas is created
+      setTimeout(function() {
+        const canvas = document.querySelector('#container canvas');
+        if (canvas) {
+          canvas.style.backgroundColor = '#0a0a0f';
+        }
+      }, 1000);
     };
   </script>
 

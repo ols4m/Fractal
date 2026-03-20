@@ -75,7 +75,12 @@ function initThemeToggle() {
     const fg = isDark ? '#f0f0f0' : '#1a1a1a';
 
     document.body.style.background = bg;
-    document.getElementById('container').style.background = bg;
+    const container = document.getElementById('container');
+    if (container) {
+      container.style.background = bg;
+      container.style.backgroundImage = isDark ? 'radial-gradient(circle, rgba(74,144,217,0.12) 1px, transparent 1px)' : 'radial-gradient(circle, rgba(0,0,0,0.08) 1px, transparent 1px)';
+      container.style.backgroundSize = '28px 28px';
+    }
 
     const formbox = document.getElementById('formbox');
     const info = document.getElementById('info');
@@ -85,12 +90,22 @@ function initThemeToggle() {
     document.querySelectorAll('#info p, #info h1').forEach(el => el.style.color = fg);
 
     const canvas = document.querySelector('#container canvas');
-    if (canvas) canvas.style.background = bg;
+    if (canvas) {
+      canvas.style.background = 'transparent';
+      canvas.style.backgroundColor = isDark ? '#0a0a0f' : '#f8f8fc';
+    }
+    document.body.style.backgroundColor = bg;
 
     if (window.network) {
-      window.network.setOptions({ nodes: { font: { color: fg } } });
+      window.network.setOptions({
+        nodes: { font: { color: fg } },
+        background: isDark ? '#0a0a0f' : '#f8f8fc'
+      });
       window.network.redraw();
     }
+    // Force body and all backgrounds
+    document.body.style.backgroundColor = bg;
+    document.documentElement.style.backgroundColor = bg;
 
     btn.querySelector('i').className = isDark ? 'icon ion-ios-moon' : 'icon ion-ios-sunny';
 
