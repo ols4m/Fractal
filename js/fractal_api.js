@@ -10,20 +10,15 @@ async function getSubPages(query) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query: query })
     });
-    if (!response.ok) return getFallbackNodes();
+    if (!response.ok) { checkDemoMode(["(DEMO)"]); return getFallbackNodes(); }
     const data = await response.json();
     data.nodes.forEach(node => {
-      window.fractalNodeData[node.name] = {
-        summary: node.summary,
-        color: node.color,
-        id: node.id
-      };
+      window.fractalNodeData[node.name] = { summary: node.summary, color: node.color, id: node.id };
     });
     window.fractalEdgeData = data.edges;
     const names = data.nodes.map(node => node.name);
     checkDemoMode(names);
     return names;
-
   } catch (err) {
     console.error("Fractal API unreachable:", err);
     checkDemoMode(["(DEMO)"]);
@@ -33,97 +28,30 @@ async function getSubPages(query) {
 
 function getFractalNodeColor(nodeName) {
   const nodeData = window.fractalNodeData[nodeName];
-  if (!nodeData) return "#4A90D9";
-  return nodeData.color;
+  return nodeData ? nodeData.color : "#4A90D9";
 }
 
 function getFractalNodeSummary(nodeName) {
   const nodeData = window.fractalNodeData[nodeName];
-  if (!nodeData) return "";
-  return nodeData.summary;
+  return nodeData ? nodeData.summary : "";
 }
 
 function getFallbackNodes() {
   return ["Structural Force (DEMO)", "Competing Pressure (DEMO)", "Hidden Constraint (DEMO)", "Emergent Pattern (DEMO)"];
 }
 
-async function fetchPageTitle(query) {
-  return query;
-}
+async function fetchPageTitle(query) { return query; }
 
 async function getRandomArticle() {
   const randomQueries = [
-    "why do empires fall",
-    "the future of work",
-    "why do startups fail",
-    "how does democracy erode",
-    "the science of creativity",
-    "why is housing so expensive",
-    "how does language shape thought",
+    "why do empires fall", "the future of work", "why do startups fail",
+    "how does democracy erode", "the science of creativity",
+    "why is housing so expensive", "how does language shape thought",
     "the future of artificial intelligence"
   ];
   return randomQueries[Math.floor(Math.random() * randomQueries.length)];
 }
 
-function initThemeToggle() {
-  const btn = document.getElementById('theme-toggle');
-  if (!btn) return;
-  let isDark = true;
-
-  function applyTheme() {
-    const bg = isDark ? '#0a0a0f' : '#ffffff';
-    const fg = isDark ? '#f0f0f0' : '#1a1a1a';
-
-    document.body.style.background = bg;
-    const container = document.getElementById('container');
-    if (container) {
-      container.style.background = bg;
-      container.style.backgroundImage = isDark ? 'radial-gradient(circle, rgba(74,144,217,0.12) 1px, transparent 1px)' : 'radial-gradient(circle, rgba(0,0,0,0.08) 1px, transparent 1px)';
-      container.style.backgroundSize = '28px 28px';
-    }
-
-    const formbox = document.getElementById('formbox');
-    const info = document.getElementById('info');
-    if (formbox) formbox.style.background = isDark ? 'rgba(10,10,20,0.92)' : 'rgba(255,255,255,0.92)';
-    if (info) info.style.background = isDark ? 'rgba(10,10,20,0.95)' : 'rgba(255,255,255,0.95)';
-    if (info) info.style.color = fg;
-    document.querySelectorAll('#info p, #info h1').forEach(el => el.style.color = fg);
-
-    const canvas = document.querySelector('#container canvas');
-    if (canvas) {
-      canvas.style.background = 'transparent';
-      canvas.style.backgroundColor = isDark ? '#0a0a0f' : '#f8f8fc';
-    }
-    document.body.style.backgroundColor = bg;
-
-    if (window.network) {
-      window.network.setOptions({
-        nodes: { font: { color: fg } },
-        background: isDark ? '#0a0a0f' : '#f8f8fc'
-      });
-      window.network.redraw();
-    }
-    // Force body and all backgrounds
-    document.body.style.backgroundColor = bg;
-    document.documentElement.style.backgroundColor = bg;
-
-    btn.querySelector('i').className = isDark ? 'icon ion-ios-moon' : 'icon ion-ios-sunny';
-
-    // Fix input text color for both modes
-    document.querySelectorAll('.commafield input').forEach(el => {
-      el.style.color = isDark ? '#ffffff' : '#1a1a2e';
-    });
-  }
-
-  btn.addEventListener('click', function() {
-    isDark = !isDark;
-    applyTheme();
-  });
-
-  applyTheme();
-}
-
-// ── DEMO MODE DETECTION ───────────────────────────────
 function checkDemoMode(nodes) {
   const isDemo = nodes.some(n => n.includes('(DEMO)'));
   let banner = document.getElementById('demo-banner');
@@ -137,4 +65,67 @@ function checkDemoMode(nodes) {
   } else {
     if (banner) banner.remove();
   }
+}
+
+function initThemeToggle() {
+  const btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+  let isDark = true;
+
+  function applyTheme() {
+    const bg = isDark ? '#0a0a0f' : '#f8f8fc';
+    const fg = isDark ? '#e8e8f0' : '#1a1a2e';
+
+    document.body.style.background = bg;
+    document.body.style.backgroundColor = bg;
+    document.documentElement.style.backgroundColor = bg;
+
+    const container = document.getElementById('container');
+    if (container) {
+      container.style.background = bg;
+      container.style.backgroundImage = isDark
+        ? 'radial-gradient(circle, rgba(74,144,217,0.12) 1px, transparent 1px)'
+        : 'radial-gradient(circle, rgba(0,0,0,0.08) 1px, transparent 1px)';
+      container.style.backgroundSize = '28px 28px';
+    }
+
+    const canvas = document.querySelector('#container canvas');
+    if (canvas) canvas.style.backgroundColor = bg;
+    try { if (window.network) window.network.canvas.frame.canvas.style.backgroundColor = bg; } catch(e) {}
+
+    const formbox = document.getElementById('formbox');
+    const info = document.getElementById('info');
+    if (formbox) formbox.style.background = isDark ? 'rgba(10,10,20,0.92)' : 'rgba(248,248,252,0.92)';
+    if (info) {
+      info.style.background = isDark ? 'rgba(10,10,20,0.95)' : 'rgba(255,255,255,0.95)';
+      info.style.color = fg;
+    }
+    document.querySelectorAll('#info p').forEach(el => el.style.color = fg);
+
+    const buttons = document.getElementById('buttons');
+    if (buttons) buttons.style.background = isDark ? 'rgba(10,10,20,0.92)' : 'rgba(248,248,252,0.92)';
+
+    const input = document.getElementById('input');
+    if (input) {
+      input.style.color = isDark ? '#ffffff' : '#1a1a2e';
+      input.style.webkitTextFillColor = isDark ? '#ffffff' : '#1a1a2e';
+    }
+    document.querySelectorAll('.commafield input').forEach(el => {
+      el.style.color = isDark ? '#ffffff' : '#1a1a2e';
+    });
+
+    if (window.network) {
+      window.network.setOptions({ nodes: { font: { color: fg } } });
+      window.network.redraw();
+    }
+
+    btn.querySelector('i').className = isDark ? 'icon ion-ios-moon' : 'icon ion-ios-sunny';
+  }
+
+  btn.addEventListener('click', function() {
+    isDark = !isDark;
+    applyTheme();
+  });
+
+  applyTheme();
 }
