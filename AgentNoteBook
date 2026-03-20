@@ -1226,3 +1226,48 @@ transition: right 0.4s cubic-bezier(0.23, 1, 0.32, 1);
 
 - `fractal_explore_panel.html` — Version B (floating)
 - `fractal_panel_comparison.html` — Side by side comparison
+
+-----
+
+## Edge Relationship Card — Draggable with Tether (Final Version)
+
+Appears when a user clicks the line connecting two nodes. Shows the relationship between them with a dashed tether line connecting the card back to the midpoint of the node-to-node edge. Fully draggable.
+
+### Behavior
+
+- Card floats and can be dragged anywhere on screen
+- Dashed animated tether connects card center to midpoint of the node edge
+- Small dot marks the midpoint on the node edge
+- “More Details” dropdown reveals reasons + “if this link broke” section
+- “Explore Both” spawns two separate draggable node cards (blue + purple)
+- Close button is brutalist dark with red hover
+
+### Relationship Badge Types
+
+- `drives` — blue `#4A90D9`
+- `tension` — red `#E05C5C`
+- `supports` — green `#50C878`
+- `constrains` — amber `#ffaa00`
+
+### Implementation Notes
+
+- On vis.js edge click, get `edge.from` and `edge.to` node names and the relationship label
+- Position card near the midpoint of the edge
+- Tether midpoint = `(nodeA.x + nodeB.x) / 2, (nodeA.y + nodeB.y) / 2`
+- Update tether on every drag move event
+- “Explore Both” opens two node cards with the existing `.node-card` component
+
+### Full Code
+
+See `fractal_edge_card.html` artifact for the complete working version.
+
+### Key Classes
+
+- `.drag-card` — main draggable container
+- `.drag-handle` — the draggable header bar
+- `.drag-close` — brutalist close button (dark default, red on hover)
+- `.tether-line` — dashed SVG line from card to edge midpoint
+- `.node-edge` — the node-to-node connection line
+- `.midpoint-dot` — white dot at edge midpoint
+- `.edge-badge` — relationship type badge (add class: drives/tension/supports/constrains)
+- `.dropdown-btn` + `.dropdown-content` — expandable details section
