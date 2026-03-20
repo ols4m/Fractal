@@ -129,15 +129,14 @@ function go() {
 // Reset the network with one or more random pages.
 function goRandom() {
   const cf = document.getElementById('input');
-  getRandomArticle().then((ra) => {
-    const text = decodeURIComponent(ra);
-    const tag = document.createElement('div');
-    tag.className = 'search-tag item';
-    tag.innerHTML = '<span>' + text + '</span><span class="delete-x">✕</span>';
-    tag.addEventListener('click', function() { this.remove(); });
-    const input = cf.getElementsByTagName('input')[0];
-    cf.insertBefore(tag, input);
+  const typingInput = cf.getElementsByTagName('input')[0];
+  // Clear existing tags
+  cf.querySelectorAll('.item').forEach(t => t.remove());
+  // Pick a random query and put it straight in the input, then fire go()
+  getRandomArticle().then((query) => {
+    typingInput.value = query;
     go();
+    typingInput.value = '';
   });
 }
 
