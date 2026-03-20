@@ -40,7 +40,7 @@ function getRegisteredItems(inp) {
   // Get the element if a string id was provided
   const cf = typeof inp === 'string' ? document.getElementById(inp) : inp;
   const items = Array.from(cf.getElementsByClassName('item'));
-  return items.map(i => i.textContent);
+  return items.map(i => { const span = i.querySelector('span:first-child'); return span ? span.textContent.trim() : i.textContent.trim(); });
 }
 
 function getItems(inp) {

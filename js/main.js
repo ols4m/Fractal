@@ -128,9 +128,15 @@ function go() {
 
 // Reset the network with one or more random pages.
 function goRandom() {
-  const cf = document.getElementsByClassName('commafield')[0];
+  const cf = document.getElementById('input');
   getRandomArticle().then((ra) => {
-    addItem(cf, decodeURIComponent(ra));
+    const text = decodeURIComponent(ra);
+    const tag = document.createElement('div');
+    tag.className = 'search-tag item';
+    tag.innerHTML = '<span>' + text + '</span><span class="delete-x">✕</span>';
+    tag.addEventListener('click', function() { this.remove(); });
+    const input = cf.getElementsByTagName('input')[0];
+    cf.insertBefore(tag, input);
     go();
   });
 }

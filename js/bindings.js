@@ -52,7 +52,7 @@ function bind() {
 
   // Bind actions for search component.
 
-  const cf = document.querySelector('.commafield');
+  const cf = document.getElementById('input');
   // Bind go button press
   const submitButton = document.getElementById('submit');
   submitButton.addEventListener('click', () => {

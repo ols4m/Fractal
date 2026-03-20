@@ -96,10 +96,7 @@ function initThemeToggle() {
     const formbox = document.getElementById('formbox');
     const info = document.getElementById('info');
     if (formbox) formbox.style.background = isDark ? 'rgba(10,10,20,0.92)' : 'rgba(248,248,252,0.92)';
-    if (info) {
-      info.style.background = isDark ? 'rgba(10,10,20,0.95)' : 'rgba(255,255,255,0.95)';
-      info.style.color = fg;
-    }
+    // Don't override intro card background
     document.querySelectorAll('#info p').forEach(el => el.style.color = fg);
 
     const buttons = document.getElementById('buttons');
@@ -129,3 +126,30 @@ function initThemeToggle() {
 
   applyTheme();
 }
+
+// Brutalist search input tag behavior
+document.addEventListener('DOMContentLoaded', function() {
+  const input = document.getElementById('fractal-typing');
+  const field = document.getElementById('input');
+  if (!input || !field) return;
+
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && this.value.trim() !== '') {
+      e.preventDefault();
+      createSearchTag(this.value.trim());
+      this.value = '';
+    }
+    if (e.key === 'Backspace' && this.value === '') {
+      const tags = field.querySelectorAll('.search-tag');
+      if (tags.length > 0) tags[tags.length - 1].remove();
+    }
+  });
+
+  function createSearchTag(text) {
+    const tag = document.createElement('div');
+    tag.className = 'search-tag item';
+    tag.innerHTML = '<span>' + text + '</span><span class="delete-x">✕</span>';
+    tag.addEventListener('click', function() { this.remove(); input.focus(); });
+    field.insertBefore(tag, input);
+  }
+});
