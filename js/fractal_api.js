@@ -1,28 +1,95 @@
 // fractal_api.js
-const FRACTAL_API_URL = "https://expert-space-succotash-4jj95xvvrqj9fjj44-8000.app.github.dev/generate-map";
+// Choose local backend for dev, but allow a deployed backend for demo/production.
+const LOCAL_API_URL = "http://127.0.0.1:8000/generate-map";
+const PROD_API_URL = "https://expert-space-succotash-4jj95xvvrqj9fjj44-8000.app.github.dev/generate-map";
+
+function getApiUrlCandidates() {
+  const host = (window.location && window.location.hostname) ? window.location.hostname : "";
+  // When served from localhost/127.0.0.1, prefer local first.
+  if (host === "localhost" || host === "127.0.0.1") return [LOCAL_API_URL, PROD_API_URL];
+  return [PROD_API_URL, LOCAL_API_URL];
+}
 
 window.fractalNodeData = {};
+window.fractalEdgeData = [];
+
+function applyDemoFallback() {
+  const demoNodes = getFallbackNodes();
+  window.fractalNodeData = {};
+  window.fractalEdgeData = [];
+
+  demoNodes.forEach((name, i) => {
+    const isEmergent = name.toLowerCase().includes("emergent");
+    // renderGraph() treats color==='grey' as emergent.
+    window.fractalNodeData[name] = {
+      summary: "",
+      color: isEmergent ? "grey" : "blue",
+      id: "demo-" + i
+    };
+  });
+
+  // Minimal edges so the graph layout has something to show.
+  if (demoNodes.length >= 3) {
+    window.fractalEdgeData = [
+      { source: demoNodes[0], target: demoNodes[1], relationship: "tension" },
+      { source: demoNodes[1], target: demoNodes[2], relationship: "supports" }
+    ];
+  }
+
+  return demoNodes;
+}
 
 async function getSubPages(query) {
   try {
-    const response = await fetch(FRACTAL_API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: query })
-    });
-    if (!response.ok) { checkDemoMode(["(DEMO)"]); return getFallbackNodes(); }
-    const data = await response.json();
-    data.nodes.forEach(node => {
-      window.fractalNodeData[node.name] = { summary: node.summary, color: node.color, id: node.id };
-    });
-    window.fractalEdgeData = data.edges;
-    const names = data.nodes.map(node => node.name);
-    checkDemoMode(names);
-    return names;
+    // Prevent stale data from previous calls.
+    window.fractalNodeData = {};
+    window.fractalEdgeData = [];
+
+    const candidates = getApiUrlCandidates();
+    let lastErr = null;
+
+    for (const apiUrl of candidates) {
+      try {
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: query })
+        });
+
+        if (!response.ok) {
+          lastErr = new Error("API returned " + response.status + " " + response.statusText);
+          continue;
+        }
+
+        const data = await response.json();
+        if (!data || !Array.isArray(data.nodes)) {
+          lastErr = new Error("Bad API response: missing data.nodes");
+          continue;
+        }
+
+        data.nodes.forEach(node => {
+          window.fractalNodeData[node.name] = { summary: node.summary, color: node.color, id: node.id };
+        });
+        window.fractalEdgeData = Array.isArray(data.edges) ? data.edges : [];
+
+        const names = data.nodes.map(node => node.name);
+        checkDemoMode(names);
+        return names;
+      } catch (err) {
+        lastErr = err;
+      }
+    }
+
+    // If every candidate URL fails, show demo nodes and a banner.
+    console.error("Fractal API unreachable:", lastErr);
+    const demoNodes = applyDemoFallback();
+    checkDemoMode(demoNodes);
+    return demoNodes;
   } catch (err) {
     console.error("Fractal API unreachable:", err);
-    checkDemoMode(["(DEMO)"]);
-    return getFallbackNodes();
+    const demoNodes = applyDemoFallback();
+    checkDemoMode(demoNodes);
+    return demoNodes;
   }
 }
 

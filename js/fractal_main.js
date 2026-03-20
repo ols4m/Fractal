@@ -10,10 +10,80 @@ function initButtons(){document.getElementById('btn-map').addEventListener('clic
 async function generateMap(){const tags=getTags();const input=document.getElementById('fractal-input');const rawInput=input.value.trim();let query='';if(tags.length>0){query=tags.join(' ');}else if(rawInput!==''){query=rawInput;createTag(rawInput);input.value='';}else{return;}showLoader();hideNodeCard();hideEdgeCard();try{await getSubPages(query);const mappedNodes=Object.entries(window.fractalNodeData).map(function(e){return Object.assign({name:e[0]},e[1]);});console.log("MAPPED NODES:",mappedNodes);console.log("EDGES:",window.fractalEdgeData);renderGraph({nodes:mappedNodes,edges:window.fractalEdgeData||[]});}catch(e){console.error('Map generation failed:',e);}finally{hideLoader();document.getElementById('btn-clear').style.display='';}}
 async function generateRandom(){const query=await getRandomArticle();createTag(query);}
 function clearMap(){nodes.clear();edges.clear();clearTags();currentNodeData={};currentEdgeData=[];hideNodeCard();hideEdgeCard();closeExplorePanel();hideDemoBanner();document.getElementById('btn-clear').style.display='none';}
-function renderGraph(data){nodes.clear();edges.clear();currentNodeData={};currentEdgeData=data.edges||[];const visNodes=data.nodes.map(function(node){currentNodeData[node.name]=node;const isEmergent=node.color==='grey'||node.type==='emergent';return{id:node.name,label:wrapLabel(node.name),color:{background:isEmergent?'#555566':'#4A90D9',border:isEmergent?'#333344':'#2a6aad',highlight:{background:'#7B6CF6',border:'#5a4cd6'},hover:{background:isEmergent?'#666677':'#5aa0e9',border:'#2a6aad'}},size:isEmergent?18:22,font:{color:'#e8e8f0'}};});const visEdges=(data.edges||[]).map(function(edge,i){return{id:'e'+i,from:edge.source,to:edge.target,label:edge.relationship||'',title:edge.relationship||'',font:{size:9,color:'#888',align:'middle'}};});nodes.add(visNodes);edges.add(visEdges);network.fit({animation:{duration:800,easingFunction:'easeInOutQuad'}});}
+function renderGraph(data){
+  nodes.clear();
+  edges.clear();
+  currentNodeData = {};
+
+  const idToName = {};
+  const rawEdges = data.edges || [];
+
+  const visNodes = data.nodes.map(function(node){
+    currentNodeData[node.name] = node;
+    if(node.id !== undefined && node.id !== null) idToName[String(node.id)] = node.name;
+
+    const isEmergent =
+      node.color === 'grey' ||
+      node.type === 'emergent' ||
+      node.color === '#888888' ||
+      (node.name && node.name.toLowerCase().includes('emergent'));
+
+    return {
+      id: node.name,
+      label: wrapLabel(node.name),
+      color: {
+        background: isEmergent ? '#555566' : '#4A90D9',
+        border: isEmergent ? '#333344' : '#2a6aad',
+        highlight: { background: '#7B6CF6', border: '#5a4cd6' },
+        hover: { background: isEmergent ? '#666677' : '#5aa0e9', border: '#2a6aad' }
+      },
+      size: isEmergent ? 18 : 22,
+      font: { color: '#e8e8f0' }
+    };
+  });
+
+  // Backend edges use node ids; frontend nodes use node names as vis ids.
+  const normalizedEdges = rawEdges.map(function(edge){
+    const fromKey = String(edge.source);
+    const toKey = String(edge.target);
+    const from = (edge.source in idToName) ? idToName[edge.source] : (fromKey in idToName ? idToName[fromKey] : edge.source);
+    const to = (edge.target in idToName) ? idToName[edge.target] : (toKey in idToName ? idToName[toKey] : edge.target);
+    return Object.assign({}, edge, { source: from, target: to });
+  });
+
+  currentEdgeData = normalizedEdges;
+
+  const visEdges = normalizedEdges.map(function(edge, i){
+    return {
+      id: 'e' + i,
+      from: edge.source,
+      to: edge.target,
+      label: edge.relationship || '',
+      title: edge.relationship || '',
+      font: { size: 9, color: '#888', align: 'middle' }
+    };
+  });
+
+  nodes.add(visNodes);
+  edges.add(visEdges);
+  network.fit({ animation: { duration: 800, easingFunction: 'easeInOutQuad' } });
+}
 function wrapLabel(text){if(text.length<=18)return text;const words=text.split(' ');let lines=[],line='';words.forEach(function(w){if((line+' '+w).trim().length>18){lines.push(line.trim());line=w;}else{line=(line+' '+w).trim();}});if(line)lines.push(line.trim());return lines.join('\n');}
 function initNodeCard(){document.getElementById('btn-node-close').addEventListener('click',hideNodeCard);document.getElementById('btn-node-explore').addEventListener('click',function(){const title=document.getElementById('node-card-title').textContent;openExplorePanel(title);});makeDraggable('node-card','node-card-head');}
-function showNodeCard(nodeId,nodeData){const card=document.getElementById('node-card');const isEmergent=nodeData.color==='grey'||nodeData.type==='emergent';document.getElementById('node-card-title').textContent=nodeId;document.getElementById('node-card-summary').textContent=nodeData.summary||'';document.getElementById('node-card-type').textContent=isEmergent?'Emergent':'Domain';const head=card.querySelector('.node-card-head');head.classList.toggle('emergent',isEmergent);card.style.display='block';}
+function showNodeCard(nodeId,nodeData){
+  const card=document.getElementById('node-card');
+  const isEmergent =
+    nodeData.color === 'grey' ||
+    nodeData.type === 'emergent' ||
+    nodeData.color === '#888888' ||
+    (nodeId && nodeId.toLowerCase().includes('emergent'));
+  document.getElementById('node-card-title').textContent=nodeId;
+  document.getElementById('node-card-summary').textContent=nodeData.summary||'';
+  document.getElementById('node-card-type').textContent=isEmergent?'Emergent':'Domain';
+  const head=card.querySelector('.node-card-head');
+  head.classList.toggle('emergent',isEmergent);
+  card.style.display='block';
+}
 function hideNodeCard(){document.getElementById('node-card').style.display='none';}
 function initEdgeCard(){document.getElementById('btn-edge-close').addEventListener('click',hideEdgeCard);document.getElementById('btn-edge-close-2').addEventListener('click',hideEdgeCard);document.getElementById('btn-explore-both').addEventListener('click',exploreBoth);document.getElementById('edge-dropdown-btn').addEventListener('click',function(){this.classList.toggle('open');document.getElementById('edge-dropdown-content').classList.toggle('open');});makeDraggable('edge-card','edge-drag-handle',updateTether);}
 function showEdgeCard(edge){document.getElementById('edge-node-a').textContent=edge.from;document.getElementById('edge-node-b').textContent=edge.to;const rel=(edge.title||edge.label||'related').toLowerCase();const badge=document.getElementById('edge-badge');badge.textContent=rel.charAt(0).toUpperCase()+rel.slice(1);badge.className='edge-badge '+rel;document.getElementById('edge-summary').textContent='These two nodes are connected through: '+rel+'.';document.getElementById('edge-card').style.display='block';updateTether();}
@@ -22,7 +92,39 @@ function exploreBoth(){const nodeA=document.getElementById('edge-node-a').textCo
 function updateTether(){const edgeCard=document.getElementById('edge-card');if(!edgeCard||edgeCard.style.display==='none')return;const nodeA=document.getElementById('edge-node-a').textContent;const nodeB=document.getElementById('edge-node-b').textContent;try{const posA=network.getPosition(nodeA);const posB=network.getPosition(nodeB);const domA=network.canvasToDOM(posA);const domB=network.canvasToDOM(posB);const mx=(domA.x+domB.x)/2;const my=(domA.y+domB.y)/2;const r=document.getElementById('edge-card-inner').getBoundingClientRect();const cx=r.left+r.width/2;const cy=r.top+r.height/2;const nodeEdge=document.getElementById('node-edge-line');nodeEdge.setAttribute('x1',domA.x);nodeEdge.setAttribute('y1',domA.y);nodeEdge.setAttribute('x2',domB.x);nodeEdge.setAttribute('y2',domB.y);const midDot=document.getElementById('mid-dot');midDot.setAttribute('cx',mx);midDot.setAttribute('cy',my);const tether=document.getElementById('tether-line');tether.setAttribute('x1',cx);tether.setAttribute('y1',cy);tether.setAttribute('x2',mx);tether.setAttribute('y2',my);}catch(e){}}
 function clearTether(){['node-edge-line','tether-line'].forEach(function(id){const el=document.getElementById(id);if(el){el.setAttribute('x1',0);el.setAttribute('y1',0);el.setAttribute('x2',0);el.setAttribute('y2',0);}});const dot=document.getElementById('mid-dot');if(dot)dot.setAttribute('r',0);}
 function initExplorePanel(){document.getElementById('btn-panel-close').addEventListener('click',closeExplorePanel);}
-function openExplorePanel(nodeId){const nodeData=currentNodeData[nodeId]||{};const isEmergent=nodeData.color==='grey'||nodeData.type==='emergent';document.getElementById('panel-title').textContent=nodeId;document.getElementById('panel-type').textContent=isEmergent?'Emergent Node':'Domain Node';document.getElementById('panel-summary').textContent=nodeData.summary||'';document.getElementById('panel-facts').textContent='Key facts will be generated here.';document.getElementById('panel-reading').textContent='Further reading will be generated here.';const connectedDiv=document.getElementById('panel-connected');connectedDiv.innerHTML='';currentEdgeData.forEach(function(edge){let connected=null;if(edge.source===nodeId)connected=edge.target;if(edge.target===nodeId)connected=edge.source;if(connected){const chip=document.createElement('span');chip.className='node-chip';chip.textContent=connected;chip.style.cssText='display:inline-block;background:#0a0a0f;border:2px solid #4A90D9;color:#4A90D9;font-size:9px;font-weight:700;text-transform:uppercase;padding:3px 8px;margin:2px;box-shadow:2px 2px 0 #000;cursor:pointer;';chip.addEventListener('click',function(){showNodeCard(connected,currentNodeData[connected]||{});});connectedDiv.appendChild(chip);}});document.getElementById('explore-panel').classList.add('open');document.getElementById('explore-panel').style.display='flex';}
+function openExplorePanel(nodeId){
+  const nodeData=currentNodeData[nodeId]||{};
+  const isEmergent =
+    nodeData.color === 'grey' ||
+    nodeData.type === 'emergent' ||
+    nodeData.color === '#888888' ||
+    (nodeId && nodeId.toLowerCase().includes('emergent'));
+
+  document.getElementById('panel-title').textContent=nodeId;
+  document.getElementById('panel-type').textContent=isEmergent?'Emergent Node':'Domain Node';
+  document.getElementById('panel-summary').textContent=nodeData.summary||'';
+  document.getElementById('panel-facts').textContent='Key facts will be generated here.';
+  document.getElementById('panel-reading').textContent='Further reading will be generated here.';
+
+  const connectedDiv=document.getElementById('panel-connected');
+  connectedDiv.innerHTML='';
+  currentEdgeData.forEach(function(edge){
+    let connected=null;
+    if(edge.source===nodeId)connected=edge.target;
+    if(edge.target===nodeId)connected=edge.source;
+    if(connected){
+      const chip=document.createElement('span');
+      chip.className='node-chip';
+      chip.textContent=connected;
+      chip.style.cssText='display:inline-block;background:#0a0a0f;border:2px solid #4A90D9;color:#4A90D9;font-size:9px;font-weight:700;text-transform:uppercase;padding:3px 8px;margin:2px;box-shadow:2px 2px 0 #000;cursor:pointer;';
+      chip.addEventListener('click',function(){showNodeCard(connected,currentNodeData[connected]||{});});
+      connectedDiv.appendChild(chip);
+    }
+  });
+
+  document.getElementById('explore-panel').classList.add('open');
+  document.getElementById('explore-panel').style.display='flex';
+}
 function closeExplorePanel(){const panel=document.getElementById('explore-panel');panel.classList.remove('open');setTimeout(function(){panel.style.display='none';},400);}
 function initButtonStack(){document.getElementById('btn-theme').addEventListener('click',toggleTheme);document.getElementById('btn-github').addEventListener('click',function(){window.open('https://github.com/ols4m/Fractal','_blank');});document.getElementById('btn-about').addEventListener('click',function(){window.open('https://github.com/ols4m/Fractal#readme','_blank');});}
 function toggleTheme(){isDark=!isDark;document.body.classList.toggle('light',!isDark);const canvas=document.querySelector('#graph canvas');if(canvas)canvas.style.backgroundColor=isDark?'#0a0a0f':'#f8f8fc';if(network){network.setOptions({nodes:{font:{color:isDark?'#e8e8f0':'#1a1a2e'}}});network.redraw();}const themeBtn=document.getElementById('btn-theme');themeBtn.classList.toggle('light',!isDark);const icon=document.getElementById('theme-icon');if(isDark){icon.innerHTML='<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';}else{icon.innerHTML='<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>';}}
