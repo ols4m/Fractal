@@ -1,7 +1,7 @@
 // fractal_api.js
 // Choose local backend for dev, but allow a deployed backend for demo/production.
-const LOCAL_API_URL = "http://127.0.0.1:8000/generate-map";
-const PROD_API_URL = "https://expert-space-succotash-4jj95xvvrqj9fjj44-8000.app.github.dev/generate-map";
+const LOCAL_API_URL = "/generate-map";
+const PROD_API_URL = "/generate-map";
 
 function getApiUrlCandidates() {
   const host = (window.location && window.location.hostname) ? window.location.hostname : "";
@@ -68,7 +68,7 @@ async function getSubPages(query) {
         }
 
         data.nodes.forEach(node => {
-          window.fractalNodeData[node.name] = { summary: node.summary, color: node.color, id: node.id };
+          window.fractalNodeData[node.name] = { name: node.name, summary: node.summary, color: node.color, id: node.id };
         });
         window.fractalEdgeData = Array.isArray(data.edges) ? data.edges : [];
 
