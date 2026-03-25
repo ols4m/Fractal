@@ -38,7 +38,9 @@ Return ONLY valid JSON. No prose. No markdown. No backticks.
   "tensions": [{{"source": "...", "target": "...", "relationship": "..."}}],
   "emergent_pattern": {{"label": "...", "summary": "..."}}
 }}
-Rules: 3 to 5 domains, specific summaries, structural forces, JSON only.
+Rules:
+- 3 to 5 domains, specific summaries, structural forces, JSON only.
+- relationship MUST be a single lowercase word chosen from: drives, tensions, supports, constrains, enables, conflicts, shapes, limits, produces, depends
 Query: {query}"""
 
 def validate(data):
@@ -90,10 +92,10 @@ def health():
 async def generate_map(request: MapRequest):
     try:
         print(f"Query: {request.query}")
-        if ENVIRONMENT == "prod" and GROQ_API_KEY:
+        if GROQ_API_KEY:
             raw = await call_groq(request.query)
         else:
-            print("No Groq key or not prod - returning demo")
+            print("No GROQ_API_KEY set - returning demo")
             return DEMO_MODE
         if not validate(raw):
             print("Validation failed")
