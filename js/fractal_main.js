@@ -24,7 +24,7 @@ function initGraph(){
       enabled:true,
       stabilization:{iterations:200},
       solver:'repulsion',
-      repulsion:{centralGravity:0.3,springLength:150,springConstant:0.08,nodeDistance:120,damping:0.2},
+      repulsion:{centralGravity:0.3,springLength:120,springConstant:0.08,nodeDistance:100,damping:0.2},
     },
   };
   network=new vis.Network(container,{nodes,edges},options);
@@ -115,10 +115,10 @@ function addCluster(parentId,data){
     if(currentNodeData[node.name])return; // already on graph — don't overwrite
     const isEmergent=node.color==='#888888'||node.color==='grey';
     const angle=(2*Math.PI*i)/data.nodes.length;
-    const radius=160;
+    const radius=130;
     currentNodeData[node.name]=Object.assign({},node,{level:parentLevel+1});
     newVisNodes.push({
-      id:node.name,label:wrapLabel(node.name),value:isEmergent?1:2,level:parentLevel+1,
+      id:node.name,label:wrapLabel(node.name),value:isEmergent?2:3,size:isEmergent?20:26,level:parentLevel+1,
       color:{
         background:isEmergent?'#555566':(node.color||'#4A90D9'),
         border:isEmergent?'#333344':'#2a6aad',
@@ -227,8 +227,9 @@ function openExplorePanel(nodeId){
     if(edge.source===nodeId)connectedDiv.appendChild(makeChip(edge.target,'#4A90D9'));
   });
 
-  document.getElementById('explore-panel').classList.add('open');
-  document.getElementById('explore-panel').style.display='flex';
+  const panel=document.getElementById('explore-panel');
+  panel.style.display='flex';
+  requestAnimationFrame(function(){panel.classList.add('open');});
 }
 function closeExplorePanel(){const panel=document.getElementById('explore-panel');panel.classList.remove('open');setTimeout(function(){panel.style.display='none';},400);}
 function initButtonStack(){document.getElementById('btn-theme').addEventListener('click',toggleTheme);document.getElementById('btn-github').addEventListener('click',function(){window.open('https://github.com/ols4m/Fractal','_blank');});document.getElementById('btn-about').addEventListener('click',function(){window.open('https://github.com/ols4m/Fractal#readme','_blank');});}

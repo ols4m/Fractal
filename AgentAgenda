@@ -7,6 +7,17 @@ Two sections:
 
 -----
 
+## PICK UP HERE — Session 7
+
+**Core interaction is working. Next focus is content and polish.**
+
+1. **Wire the Explore panel to real AI output** — "Key facts will be generated here" and "Further reading will be generated here" are placeholders. These should make an AI call for the selected node and populate with real content.
+2. **Visual indicator for expanded nodes** — user has no way to tell which nodes have already been expanded. Add a subtle ring, glow, or border change to mark expanded nodes differently from unexpanded ones.
+3. **Light mode polish pass** — some UI elements (buttons, cards, panel) still look rough in light mode. Do a full sweep.
+4. **Random button UX** — currently just adds a tag silently. Should either auto-MAP after adding the tag, or give some feedback that the tag was added.
+
+-----
+
 ## SPRINT TASKS
 
 *Specific changes. Each one is a real coding task.*

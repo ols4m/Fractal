@@ -374,6 +374,47 @@ Context-aware expansion — each node click sends existing map as context so AI 
 
 -----
 
+## Session 6 — March 31 2026
+
+### What Was Accomplished
+
+Full graph interaction overhaul. Fractal now behaves like a real fractal explorer — clean spoke layout, click to inspect, double-click to expand any node infinitely.
+
+**Timeline (all timestamps Mon Mar 30–31):**
+
+- **~8:16 PM** — Started session. Graph was producing a tangled web (every node connecting to every other node). Identified root cause: API inter-node edges being rendered + `expandNode` firing on every click.
+- **~8:56 PM** — Fixed spoke/star pattern. Removed all API inter-node edges from `addCluster`. Only parent→child edges created. Increased spring physics for spacing.
+- **~9:01 PM** — Fixed MAP button. Was joining all tags into one combined query string node. Rewrote `generateMap` to create one separate central node per tag, no API call on MAP press.
+- **~9:14 PM** — Split click interactions: single click = inspect card only, double-click = expand node. Previously single click was triggering expansion.
+- **~9:24 PM** — Enabled full fractal expansion. Domain nodes were blocked from expanding (level guard). Removed the restriction — double-clicking any node at any depth now calls the AI and adds a sub-ring around that node, connected only back to its parent.
+- **~9:32 PM** — Fixed light mode node labels. Per-node `font.color` was overriding the global theme setting. Removed hardcoded color from individual nodes so `toggleTheme`'s `setOptions` call actually takes effect. Labels now go black in light mode.
+- **After 9:32 PM** — Added full ancestry path highlighting. Clicking a node now dims all unrelated edges and draws the full chain back to the root query node in purple. Added `getAncestorPath`, `highlightPath`, `resetHighlight` functions. Closing the card resets the graph.
+- **Connected Nodes panel** — Redesigned to show ancestry path (purple chips, root → parent) + direct children (blue chips) instead of a flat list of all connected nodes.
+- **Cache busting** — Added `?v=4` to `fractal_api.js` and `fractal_main.js` script tags in `index.html`.
+- **Physics tuning** — Tuned repulsion physics multiple times. Final values: `springLength: 150`, `nodeDistance: 120`, `centralGravity: 0.3`, spawn `radius: 160`. Produces tight Wikipedia Map-style layout.
+- **Edge labels** — Fully removed. No tooltips, no text on spokes.
+- **Committed** — All changes committed to main.
+
+### Final State of js/fractal_main.js
+
+- `generateMap()` — creates one central dark node per tag, no API call, no auto-expand
+- `expandNode(nodeId)` — called on double-click of any node, fetches AI, adds domain ring around that node
+- `addCluster(parentId, data)` — builds spoke ring, only parent→child edges, no inter-node connections
+- `highlightPath(nodeId)` / `resetHighlight()` — dims/highlights ancestry chain on node click
+- `getAncestorPath(nodeId)` — walks `currentEdgeData` upward to find full chain to root
+- Click handler: single click = `showNodeCard` only
+- Double-click handler: `expandNode` for any node
+
+### What Still Needs Work
+
+- Explore panel content is placeholder ("Key facts will be generated here") — not wired to real AI output
+- Node card "Explore" button opens panel but facts/reading sections are static
+- Random button calls `getRandomArticle` — behavior and integration could be cleaner
+- No visual indicator that a node has been expanded already vs unexpanded
+- Light mode still slightly rough — some UI elements need color pass
+
+-----
+
 ## Session 5 — March 19 2026
 
 ### What Was Accomplished
