@@ -14,7 +14,7 @@ function initGraph(){
       borderWidth:2,borderWidthSelected:3,
     },
     edges:{
-      color:{color:'#2a2a3a',highlight:'#7B6CF6',hover:'#7B6CF6'},
+      color:{color:'#4a4a6a',highlight:'#7B6CF6',hover:'#7B6CF6'},
       smooth:{type:'continuous'},
       width:1.5,selectionWidth:3,
       label:'',font:{size:0},
@@ -23,8 +23,8 @@ function initGraph(){
     physics:{
       enabled:true,
       stabilization:{iterations:200},
-      solver:'repulsion',
-      repulsion:{centralGravity:0.3,springLength:120,springConstant:0.08,nodeDistance:100,damping:0.2},
+      solver:'barnesHut',
+      barnesHut:{gravitationalConstant:-6000,centralGravity:0.05,springLength:130,springConstant:0.04,damping:0.06,avoidOverlap:0.3},
     },
   };
   network=new vis.Network(container,{nodes,edges},options);
@@ -57,6 +57,7 @@ function generateMap(){
   if(rawInput!==''){createTag(rawInput);input.value='';}
   const tags=getTags();
   if(tags.length===0)return;
+  document.getElementById('intro-card').style.display='none';
   hideNodeCard();hideEdgeCard();
   // Count existing central nodes to offset new ones horizontally
   const existingCentral=Object.values(currentNodeData).filter(function(n){return n.level===0;}).length;
@@ -111,19 +112,19 @@ function addCluster(parentId,data){
 
   const parentLevel=(currentNodeData[parentId]&&currentNodeData[parentId].level!=null)?currentNodeData[parentId].level:0;
   const newVisNodes=[];
+  const radius=130;
   data.nodes.forEach(function(node,i){
     if(currentNodeData[node.name])return; // already on graph — don't overwrite
     const isEmergent=node.color==='#888888'||node.color==='grey';
     const angle=(2*Math.PI*i)/data.nodes.length;
-    const radius=130;
     currentNodeData[node.name]=Object.assign({},node,{level:parentLevel+1});
     newVisNodes.push({
       id:node.name,label:wrapLabel(node.name),value:isEmergent?2:3,size:isEmergent?20:26,level:parentLevel+1,
       color:{
-        background:isEmergent?'#555566':(node.color||'#4A90D9'),
-        border:isEmergent?'#333344':'#2a6aad',
+        background:isEmergent?washColor('#555566',parentLevel):washColor(node.color||'#4A90D9',parentLevel),
+        border:isEmergent?'#333344':washColor('#2a6aad',parentLevel),
         highlight:{background:'#7B6CF6',border:'#5a4cd6'},
-        hover:{background:isEmergent?'#666677':'#5aa0e9',border:'#2a6aad'},
+        hover:{background:isEmergent?washColor('#666677',parentLevel):washColor('#5aa0e9',parentLevel),border:'#2a6aad'},
       },
       x:Math.round(px+radius*Math.cos(angle)),
       y:Math.round(py+radius*Math.sin(angle)),
@@ -131,20 +132,28 @@ function addCluster(parentId,data){
   });
   nodes.update(newVisNodes);
 
+  // Lengthen the edge connecting parentId to its own parent so the cluster has room
+  const parentEdge=currentEdgeData.find(function(e){return e.target===parentId;});
+  if(parentEdge){
+    const newLength=Math.max(220,150+(data.nodes.length*18));
+    edges.update({id:parentEdge.id,length:newLength});
+  }
+
   // Wire parent → each new child only (star/spoke pattern)
-  // Inter-node edges from the API are ignored until expansion model is implemented
   newVisNodes.forEach(function(vn){
     addEdgeIfMissing(parentId,vn.id,'');
   });
 
   network.fit({animation:{duration:800,easingFunction:'easeInOutQuad'}});
 }
-function addEdgeIfMissing(from,to,rel){
+function addEdgeIfMissing(from,to,rel,length){
   const exists=currentEdgeData.some(function(e){return(e.source===from&&e.target===to)||(e.source===to&&e.target===from);});
   if(exists)return;
   const id='e'+(edgeIdCounter++);
   currentEdgeData.push({id:id,source:from,target:to,relationship:rel});
-  edges.add({id:id,from:from,to:to,color:{color:'#2a2a3a',highlight:'#7B6CF6',hover:'#7B6CF6'}});
+  const edgeDef={id:id,from:from,to:to,color:{color:'#4a4a6a',highlight:'#7B6CF6',hover:'#7B6CF6'}};
+  if(length)edgeDef.length=length;
+  edges.add(edgeDef);
 }
 function getAncestorPath(nodeId){
   const path=[nodeId];
@@ -158,7 +167,7 @@ function getAncestorPath(nodeId){
   return path;
 }
 function highlightPath(nodeId){
-  const dimmed=currentEdgeData.map(function(e){return{id:e.id,color:{color:'#1c1c2a'},width:1};});
+  const dimmed=currentEdgeData.map(function(e){return{id:e.id,color:{color:'#333355'},width:1};});
   edges.update(dimmed);
   const path=getAncestorPath(nodeId);
   for(let i=0;i<path.length-1;i++){
@@ -168,7 +177,14 @@ function highlightPath(nodeId){
   }
 }
 function resetHighlight(){
-  edges.update(currentEdgeData.map(function(e){return{id:e.id,color:{color:'#2a2a3a'},width:1.5};}));
+  edges.update(currentEdgeData.map(function(e){return{id:e.id,color:{color:'#4a4a6a'},width:1.5};}));
+}
+function washColor(hex,level){
+  if(!hex||hex[0]!=='#')return hex;
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  const grey=155,t=Math.min(Math.max(0,level-48)*0.12,0.75);
+  const nr=Math.round(r+(grey-r)*t),ng=Math.round(g+(grey-g)*t),nb=Math.round(b+(grey-b)*t);
+  return '#'+[nr,ng,nb].map(function(v){return v.toString(16).padStart(2,'0');}).join('');
 }
 function wrapLabel(text){if(text.length<=18)return text;const words=text.split(' ');let lines=[],line='';words.forEach(function(w){if((line+' '+w).trim().length>18){lines.push(line.trim());line=w;}else{line=(line+' '+w).trim();}});if(line)lines.push(line.trim());return lines.join('\n');}
 function initNodeCard(){document.getElementById('btn-node-close').addEventListener('click',hideNodeCard);document.getElementById('btn-node-explore').addEventListener('click',function(){const title=document.getElementById('node-card-title').textContent;openExplorePanel(title);});makeDraggable('node-card','node-card-head');}

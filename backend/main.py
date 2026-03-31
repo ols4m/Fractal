@@ -39,19 +39,22 @@ Return ONLY valid JSON. No prose. No markdown. No backticks.
   "emergent_pattern": {{"label": "...", "summary": "..."}}
 }}
 Rules:
-- 3 to 5 domains, specific summaries, structural forces, JSON only.
+- Generate as many domains as the topic naturally warrants — like how many distinct linked concepts appear on a Wikipedia page about this topic. A rich, well-connected topic (e.g. "Money", "Evolution") might have 10-14 domains. A narrower topic might have 4-6. Let the conceptual richness of the query determine the count organically. Minimum 3, no hard maximum.
+- Each domain must be a distinct structural force, field, or dimension — not a rephrasing of another.
+- Summaries must be specific, not generic.
 - relationship MUST be a single lowercase word chosen from: drives, tensions, supports, constrains, enables, conflicts, shapes, limits, produces, depends
+- JSON only. No prose. No markdown. No backticks.
 Query: {query}"""
 
 def validate(data):
     try:
         d = data.get("domains", [])
         e = data.get("emergent_pattern", {})
-        return (3 <= len(d) <= 5) and e.get("label") and e.get("summary")
+        return (len(d) >= 3) and e.get("label") and e.get("summary")
     except:
         return False
 
-COLORS = ["#4A90D9","#50C878","#E8A838","#E05C5C","#9B59B6"]
+COLORS = ["#4A90D9","#50C878","#E8A838","#E05C5C","#9B59B6","#1ABC9C","#E67E22","#3498DB","#E91E63","#8BC34A","#FF5722","#00BCD4","#FF9800","#673AB7"]
 
 def transform(data):
     nodes, edges, n2i = [], [], {}
