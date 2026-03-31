@@ -374,6 +374,50 @@ Context-aware expansion — each node click sends existing map as context so AI 
 
 -----
 
+## Session 7 — March 31 2026
+
+### What Was Accomplished
+
+Full visual and physics overhaul. Fractal now feels much closer to a polished product.
+
+**Physics & Layout**
+- Switched physics solver from `repulsion` back to `barnesHut` with `damping: 0.06` — gives the elastic wobble/spring bounce when nodes expand, just like Wikipedia Map
+- Dynamic parent edge lengthening — when a node expands, the spoke connecting it to its parent grows proportionally to how many children were produced, pushing the cluster away to avoid collisions
+- Fixed `centralGravity` (lowered to 0.05) so expanded clusters stop getting pulled back into the root ring
+- Child spoke radius fixed at 130px for consistency; only the parent edge length varies
+
+**Visual Polish**
+- Restored `smooth: {type:'continuous'}` — edges now curve naturally and bend when you drag nodes
+- Edge color lifted from `#2a2a3a` to `#4a4a6a` — lines are now clearly visible in dark mode
+- Path highlight dim color lifted from `#1c1c2a` to `#333355` — non-path edges stay readable when a node is selected
+- Added `washColor(hex, level)` function — nodes desaturate as they get deeper, kicking in only after level 48 (requires ~50 genuine expansions before any color loss is visible)
+- Light mode node labels fixed — removed hardcoded `font.color` from per-node objects so global theme toggle applies correctly
+
+**Interaction**
+- Intro card now auto-dismisses when MAP is clicked — no longer need to hit "Get Started" to see the graph
+- Explore panel slide-in animation fixed — was setting `display:flex` and `open` class simultaneously (no transition). Now uses `requestAnimationFrame` to stagger them
+- Single click = inspect card, double-click = expand (any node at any depth)
+- Ancestry path highlighting on node click — dims all non-path edges, draws full chain to root in purple
+
+**AI / Backend**
+- Prompt rewritten — removed hardcoded "3 to 5 domains" limit. AI now generates as many nodes as the topic naturally warrants, like Wikipedia link counts. Rich topics get 10-14 nodes, narrow ones 4-6
+- Validation loosened — only requires minimum 3 domains, no upper cap
+- COLORS array expanded from 5 to 14 distinct colors to handle large node counts without repetition
+- Cache busted scripts with `?v=4`
+
+### Current State
+
+The graph looks and feels substantially better. Physics is springy, edges are readable, layout separates clusters cleanly, and the AI produces organically-sized maps.
+
+### What Still Needs Work
+
+- Explore panel content is still placeholder ("Key facts will be generated here")
+- No visual indicator distinguishing expanded vs unexpanded nodes
+- Light mode needs a full polish pass
+- Random button adds a tag silently — no feedback or auto-MAP
+
+-----
+
 ## Session 6 — March 31 2026
 
 ### What Was Accomplished
