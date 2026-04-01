@@ -111,10 +111,39 @@ async function fetchPageTitle(query) { return query; }
 
 async function getRandomArticle() {
   const randomQueries = [
-    "why do empires fall", "the future of work", "why do startups fail",
-    "how does democracy erode", "the science of creativity",
-    "why is housing so expensive", "how does language shape thought",
-    "the future of artificial intelligence"
+    // Power & Society
+    "why do empires fall", "how does democracy erode", "why do revolutions succeed",
+    "how does propaganda work", "why do civilizations collapse", "what makes a city thrive",
+    "how does corruption spread", "why do countries go to war", "what causes political polarization",
+    "how do social movements win", "why does inequality grow", "what makes institutions last",
+    // Economics & Markets
+    "why is housing so expensive", "how do financial crises happen", "why do startups fail",
+    "what causes inflation", "how does globalization reshape work", "why do monopolies form",
+    "what makes an economy resilient", "how does debt shape nations", "why do currencies collapse",
+    "what drives technological unemployment", "how do supply chains break",
+    // Science & Nature
+    "how does evolution work", "why do species go extinct", "what is consciousness",
+    "how do pandemics spread", "why do ecosystems collapse", "what drives climate change",
+    "how does the brain form memories", "why do we sleep", "what is dark matter",
+    "how did life begin", "what makes a drug addictive", "why do we age",
+    // Technology & Future
+    "the future of artificial intelligence", "how does the internet change society",
+    "what is the cost of surveillance", "how do algorithms shape behavior",
+    "why is nuclear fusion hard", "what comes after smartphones",
+    "how does misinformation spread", "what makes a technology go viral",
+    "how do social networks change politics", "what is the future of money",
+    // Mind & Culture
+    "the science of creativity", "how does language shape thought",
+    "why do religions form", "what makes art last", "how does music affect the brain",
+    "why do myths persist", "how does culture spread", "what drives moral progress",
+    "why do people believe conspiracy theories", "how does education shape society",
+    "what makes a great leader", "why do humans need stories",
+    // Systems & Complexity
+    "the future of work", "how do cities self-organize", "what is the nature of time",
+    "how do feedback loops cause crises", "why do complex systems fail suddenly",
+    "what is the science of trust", "how does innovation cluster geographically",
+    "why do some ideas spread and others die", "what makes a network resilient",
+    "how does chaos theory apply to markets", "what drives the rise of cities"
   ];
   return randomQueries[Math.floor(Math.random() * randomQueries.length)];
 }

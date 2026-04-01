@@ -1,7 +1,9 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html,body{width:100%;height:100%;overflow:hidden;font-family:monospace;background:#0a0a0f;color:#e8e8f0;}
+html,body{width:100%;height:100%;overflow:hidden;font-family:monospace;background:#0a0a0f;color:#e8e8f0;transition:background-color 0.4s ease,color 0.4s ease;}
+@keyframes theme-icon-spin{0%{transform:rotate(0deg) scale(1);opacity:1;}45%{transform:rotate(180deg) scale(0.1);opacity:0;}55%{transform:rotate(180deg) scale(0.1);opacity:0;}100%{transform:rotate(360deg) scale(1);opacity:1;}}
+#btn-theme.switching #theme-icon{animation:theme-icon-spin 0.5s ease forwards;}
 #graph{position:fixed;inset:0;width:100%;height:100%;background:#0a0a0f;background-image:radial-gradient(circle,rgba(74,144,217,0.12) 1px,transparent 1px);background-size:28px 28px;z-index:0;}
-#graph canvas{background:transparent;}
+#graph canvas{background:transparent;transition:background-color 0.4s ease;}
 #search-wrap{position:fixed;top:20px;left:20px;display:flex;align-items:center;gap:10px;z-index:50;}
 #fractal-field{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 14px;min-width:280px;max-width:480px;min-height:48px;background:#0f0f1a;border:3px solid #4A90D9;box-shadow:5px 5px 0 #000;cursor:text;}
 #fractal-field:focus-within{animation:field-pulse 4s ease-in-out infinite;}
@@ -115,6 +117,8 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:monospace;backgroun
 #btn-stack button::after{content:attr(data-tip);position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%) translateX(4px);background:#0f0f1a;border:2px solid #4A90D9;color:#4A90D9;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;padding:3px 8px;white-space:nowrap;box-shadow:2px 2px 0 #000;opacity:0;pointer-events:none;transition:opacity 0.15s ease,transform 0.15s ease;font-family:monospace;}
 #btn-stack button:hover::after{opacity:1;transform:translateY(-50%) translateX(0);}
 #btn-theme.light{background:#7B6CF6;border-color:#7B6CF6;color:#fff;}
+body.light #btn-theme.light{background:#ffffff;border-color:#7B6CF6;color:#7B6CF6;}
+#btn-monochrome.active{background:#4A90D9;border-color:#4A90D9;color:#fff;box-shadow:0 0 12px rgba(74,144,217,0.5),4px 4px 0 #000;}
 .stack-divider{width:100%;height:3px;background:#000;position:relative;z-index:2;}
 #loader{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:200;background:rgba(10,10,15,0.5);backdrop-filter:blur(4px);}
 #loader.visible{display:flex;}
