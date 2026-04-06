@@ -1,7 +1,7 @@
 'use strict';
-let network=null,nodes=null,edges=null,isDark=true,currentNodeData={},currentEdgeData=[],edgeIdCounter=0,expandedNodes=new Set(),monochromeMode=false,labelsVisible=true;
+let network=null,nodes=null,edges=null,isDark=true,isMultiColor=true,currentNodeData={},currentEdgeData=[],edgeIdCounter=0,expandedNodes=new Set(),monochromeMode=false,labelsVisible=true;
 const FRACTAL_BLUE='#4A90D9';
-window.addEventListener('DOMContentLoaded',function(){initGraph();initSearch();initButtons();initButtonStack();initIntroCard();initNodeCard();initEdgeCard();initExplorePanel();initSettingsPanel();initLoader();});
+window.addEventListener('DOMContentLoaded',function(){initGraph();initSearch();initButtons();initButtonStack();initIntroCard();initNodeCard();initEdgeCard();initExplorePanel();initSettingsPanel();initMiniSettings();initLoader();});
 function initGraph(){
   const container=document.getElementById('graph');
   nodes=new vis.DataSet([]);
@@ -92,7 +92,22 @@ function addRootLink(a,b){
   edges.add({id:id,from:a,to:b,hidden:true,length:520,physics:true});
 }
 async function generateRandom(){const query=await getRandomArticle();createTag(query);generateMap();}
-function clearMap(){nodes.clear();edges.clear();clearTags();currentNodeData={};currentEdgeData=[];edgeIdCounter=0;expandedNodes=new Set();monochromeMode=false;const monoTog=document.getElementById('tog-monochrome');if(monoTog){monoTog.setAttribute('data-on','false');monoTog.querySelector('.toggle-label').textContent='OFF';}hideNodeCard();hideEdgeCard();closeExplorePanel();hideDemoBanner();document.getElementById('btn-clear').style.display='none';}
+function clearMap(){
+  nodes.clear();
+  edges.clear();
+  clearTags();
+  currentNodeData={};
+  currentEdgeData=[];
+  edgeIdCounter=0;
+  expandedNodes=new Set();
+  monochromeMode=false;
+  setColorState(true);
+  hideNodeCard();
+  hideEdgeCard();
+  closeExplorePanel();
+  hideDemoBanner();
+  document.getElementById('btn-clear').style.display='none';
+}
 async function expandNode(nodeId){
   if(expandedNodes.has(nodeId))return;
   expandedNodes.add(nodeId);
@@ -309,6 +324,73 @@ function toggleMonochrome(){
   });
   nodes.update(updates);
 }
+function setThemeState(dark){
+  isDark = dark;
+  document.body.classList.toggle('light', !isDark);
+  const themeDesc = document.getElementById('themeDesc');
+  if(themeDesc) themeDesc.textContent = isDark ? 'Dark mode' : 'Light mode';
+  const themeToggle = document.getElementById('themeToggle');
+  if(themeToggle) themeToggle.checked = !isDark;
+  const themePanelTog = document.getElementById('tog-theme');
+  if(themePanelTog){
+    themePanelTog.setAttribute('data-on', String(isDark));
+    themePanelTog.querySelector('.toggle-label').textContent = isDark ? 'ON' : 'OFF';
+  }
+  if(network){
+    network.setOptions({nodes:{font:{color:isDark?'#e8e8f0':'#1a1a2e'}}});
+    network.redraw();
+  }
+}
+
+function setColorState(multi){
+  isMultiColor = multi;
+  document.body.classList.toggle('mono', !isMultiColor);
+  const colorDesc = document.getElementById('colorDesc');
+  if(colorDesc) colorDesc.textContent = isMultiColor ? 'Multi-color' : 'Monochrome';
+  const colorLabel = document.getElementById('colorLabel');
+  if(colorLabel) colorLabel.textContent = isMultiColor ? 'Multicolor' : 'Monochrome';
+  const colorToggle = document.getElementById('colorToggle');
+  if(colorToggle) colorToggle.checked = !isMultiColor;
+  const monoTog = document.getElementById('tog-monochrome');
+  if(monoTog){
+    const monoOn = !isMultiColor;
+    monoTog.setAttribute('data-on', String(monoOn));
+    monoTog.querySelector('.toggle-label').textContent = monoOn ? 'ON' : 'OFF';
+  }
+  toggleMonochrome(!isMultiColor);
+}
+
+function toggleSettings(){
+  const panel = document.getElementById('settingsPanel');
+  const btn = document.getElementById('settingsBtn');
+  if(panel) panel.classList.toggle('open');
+  if(btn) btn.classList.toggle('open');
+}
+
+function toggleTheme(){
+  const checkbox = document.getElementById('themeToggle');
+  setThemeState(checkbox ? !checkbox.checked : !isDark);
+}
+
+function toggleColor(){
+  const checkbox = document.getElementById('colorToggle');
+  setColorState(checkbox ? !checkbox.checked : isMultiColor);
+}
+
+function initMiniSettings(){
+  const btn = document.getElementById('settingsBtn');
+  if(btn) btn.addEventListener('click',toggleSettings);
+  setThemeState(isDark);
+  setColorState(isMultiColor);
+  document.addEventListener('click',function(e){
+    const wrap = document.querySelector('.settings-wrap');
+    if(!wrap || wrap.contains(e.target)) return;
+    const panel = document.getElementById('settingsPanel');
+    if(panel) panel.classList.remove('open');
+    if(btn) btn.classList.remove('open');
+  });
+}
+
 function initIntroCard(){document.getElementById('btn-get-started').addEventListener('click',function(){document.getElementById('intro-card').style.display='none';document.getElementById('fractal-input').focus();});}
 function showDemoBanner(){document.getElementById('demo-banner').style.display='inline-flex';}
 function hideDemoBanner(){document.getElementById('demo-banner').style.display='none';}
@@ -368,14 +450,8 @@ function initSettingsPanel(){
   });
   setupToggle('tog-physics',function(on){if(network)network.setOptions({physics:{enabled:on}});});
   setupToggle('tog-curved',function(on){if(network)network.setOptions({edges:{smooth:{type:on?'continuous':'discrete'}}});});
-  setupToggle('tog-theme',function(on){
-    isDark=on;
-    document.body.classList.toggle('light',!isDark);
-    const canvas=document.querySelector('#graph canvas');
-    if(canvas)canvas.style.backgroundColor='transparent';
-    if(network){network.setOptions({nodes:{font:{color:isDark?'#e8e8f0':'#1a1a2e'}}});network.redraw();}
-  });
-  setupToggle('tog-monochrome',function(){ toggleMonochrome(); });
+  setupToggle('tog-theme',function(on){ setThemeState(on); });
+  setupToggle('tog-monochrome',function(on){ setColorState(!on); });
   setupToggle('tog-labels',function(on){
     labelsVisible=on;
     const updates=Object.keys(currentNodeData).map(function(id){
@@ -397,12 +473,10 @@ function resetSettings(){
   ['tog-physics','tog-curved','tog-labels'].forEach(function(id){
     const el=document.getElementById(id);el.setAttribute('data-on','true');el.querySelector('.toggle-label').textContent='ON';
   });
-  // Reset monochrome to off
-  if(monochromeMode)toggleMonochrome();
-  const monoTog=document.getElementById('tog-monochrome');if(monoTog){monoTog.setAttribute('data-on','false');monoTog.querySelector('.toggle-label').textContent='OFF';}
+  // Reset monochrome and color state
+  setColorState(true);
   // Reset theme to dark
-  if(!isDark){isDark=true;document.body.classList.remove('light');if(network){network.setOptions({nodes:{font:{color:'#e8e8f0'}}});network.redraw();}}
-  const themeTog=document.getElementById('tog-theme');if(themeTog){themeTog.setAttribute('data-on','true');themeTog.querySelector('.toggle-label').textContent='ON';}
+  setThemeState(true);
   labelsVisible=true;
   if(network){network.setOptions({physics:{enabled:true,barnesHut:{gravitationalConstant:-8000,springLength:130,damping:0.06}},edges:{width:2,selectionWidth:4,smooth:{type:'continuous'}},nodes:{scaling:{min:16,max:30},font:{size:13}}});}
   const updates=Object.keys(currentNodeData).map(function(id){
