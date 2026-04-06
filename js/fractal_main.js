@@ -1,5 +1,5 @@
 'use strict';
-let network=null,nodes=null,edges=null,isDark=true,isMultiColor=true,currentNodeData={},currentEdgeData=[],edgeIdCounter=0,expandedNodes=new Set(),monochromeMode=false,labelsVisible=true;
+let network=null,nodes=null,edges=null,isDark=true,isMultiColor=true,currentNodeData={},currentEdgeData=[],edgeIdCounter=0,expandedNodes=new Set(),monochromeMode=false,labelsVisible=true,nodeCardLeft=false;
 const FRACTAL_BLUE='#4A90D9';
 window.addEventListener('DOMContentLoaded',function(){initGraph();initSearch();initButtons();initButtonStack();initIntroCard();initNodeCard();initEdgeCard();initExplorePanel();initSettingsPanel();initLoader();});
 function initGraph(){
@@ -251,8 +251,28 @@ function showNodeCard(nodeId,nodeData){
   head.classList.toggle('emergent',isEmergent);
   card.style.display='block';
   highlightPath(nodeId);
+  adjustSettingsHeight();
 }
-function hideNodeCard(){document.getElementById('node-card').style.display='none';resetHighlight();}
+function hideNodeCard(){document.getElementById('node-card').style.display='none';resetHighlight();adjustSettingsHeight();}
+function setNodeCardPosition(left){
+  nodeCardLeft=left;
+  const card=document.getElementById('node-card');
+  if(card){card.classList.toggle('card-left',left);card.style.left='';card.style.top='';card.style.transform='';}
+  const tog=document.getElementById('tog-card-left');
+  if(tog){tog.setAttribute('data-on',String(left));tog.querySelector('.toggle-label').textContent=left?'ON':'OFF';}
+  adjustSettingsHeight();
+}
+function adjustSettingsHeight(){
+  const panel=document.getElementById('settings-panel');
+  const card=document.getElementById('node-card');
+  if(!panel)return;
+  if(panel.classList.contains('open')&&card&&card.style.display!=='none'){
+    const cardTop=card.getBoundingClientRect().top;
+    panel.style.bottom=(window.innerHeight-cardTop+10)+'px';
+  }else{
+    panel.style.bottom='';
+  }
+}
 function initEdgeCard(){document.getElementById('btn-edge-close').addEventListener('click',hideEdgeCard);document.getElementById('btn-edge-close-2').addEventListener('click',hideEdgeCard);document.getElementById('btn-explore-both').addEventListener('click',exploreBoth);document.getElementById('edge-dropdown-btn').addEventListener('click',function(){this.classList.toggle('open');document.getElementById('edge-dropdown-content').classList.toggle('open');});makeDraggable('edge-card','edge-drag-handle',updateTether);}
 function showEdgeCard(edge){document.getElementById('edge-node-a').textContent=edge.from;document.getElementById('edge-node-b').textContent=edge.to;const rel=(edge.title||edge.label||'related').toLowerCase();const badge=document.getElementById('edge-badge');badge.textContent=rel.charAt(0).toUpperCase()+rel.slice(1);badge.className='edge-badge '+rel;document.getElementById('edge-summary').textContent='These two nodes are connected through: '+rel+'.';document.getElementById('edge-card').style.display='block';updateTether();}
 function hideEdgeCard(){document.getElementById('edge-card').style.display='none';clearTether();}
@@ -298,8 +318,8 @@ function openExplorePanel(nodeId){
 }
 function closeExplorePanel(){const panel=document.getElementById('explore-panel');panel.classList.remove('open');setTimeout(function(){panel.style.display='none';},400);}
 function initButtonStack(){document.getElementById('btn-github').addEventListener('click',function(){window.open('https://github.com/ols4m/Fractal','_blank');});document.getElementById('btn-about').addEventListener('click',function(){window.open('https://github.com/ols4m/Fractal#readme','_blank');});}
-function toggleMonochrome(){
-  monochromeMode=!monochromeMode;
+function toggleMonochrome(force){
+  if(force!==undefined){monochromeMode=force;}else{monochromeMode=!monochromeMode;}
   const updates=[];
   Object.entries(currentNodeData).forEach(function([id,data]){
     if(data.level===0)return; // leave central nodes untouched
@@ -412,10 +432,12 @@ function setupToggle(id,callback){
 function toggleSettingsPanel(){
   const open=document.getElementById('settings-panel').classList.toggle('open');
   document.getElementById('btn-settings').classList.toggle('active',open);
+  adjustSettingsHeight();
 }
 function closeSettingsPanel(){
   document.getElementById('settings-panel').classList.remove('open');
   document.getElementById('btn-settings').classList.remove('active');
+  adjustSettingsHeight();
 }
 function initSettingsPanel(){
   document.getElementById('btn-settings').addEventListener('click',toggleSettingsPanel);
@@ -452,6 +474,7 @@ function initSettingsPanel(){
   setupToggle('tog-curved',function(on){if(network)network.setOptions({edges:{smooth:{type:on?'continuous':'discrete'}}});});
   setupToggle('tog-theme',function(on){ setThemeState(on); });
   setupToggle('tog-monochrome',function(on){ setColorState(!on); });
+  setupToggle('tog-card-left',function(on){setNodeCardPosition(on);});
   setupToggle('tog-labels',function(on){
     labelsVisible=on;
     const updates=Object.keys(currentNodeData).map(function(id){
@@ -478,6 +501,7 @@ function resetSettings(){
   // Reset theme to dark
   setThemeState(true);
   labelsVisible=true;
+  setNodeCardPosition(false);
   if(network){network.setOptions({physics:{enabled:true,barnesHut:{gravitationalConstant:-8000,springLength:130,damping:0.06}},edges:{width:2,selectionWidth:4,smooth:{type:'continuous'}},nodes:{scaling:{min:16,max:30},font:{size:13}}});}
   const updates=Object.keys(currentNodeData).map(function(id){
     const lvl=currentNodeData[id]&&currentNodeData[id].level;return {id:id,font:{size:lvl===0?17:13,bold:lvl===0}};

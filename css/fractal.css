@@ -143,7 +143,7 @@ body.light #fractal-input{color:#1a1a2e;}
 body.light #fractal-input::placeholder{color:#aaaacc;}
 body.light #action-btns button{background:#ffffff;}
 body.light #btn-stack button{background:#ffffff;}
-#settings-panel{position:fixed;top:50%;left:-310px;transform:translateY(-50%);width:280px;max-height:85vh;background:#0f0f1a;border:3px solid #4A90D9;box-shadow:12px 12px 0 #000;z-index:200;display:flex;flex-direction:column;overflow:hidden;transition:left 0.4s cubic-bezier(0.23,1,0.32,1);}
+#settings-panel{position:fixed;bottom:20px;left:-310px;width:280px;max-height:calc(100vh - 120px);background:#0f0f1a;border:3px solid #4A90D9;box-shadow:12px 12px 0 #000;z-index:200;display:flex;flex-direction:column;overflow:hidden;transition:left 0.4s cubic-bezier(0.23,1,0.32,1),bottom 0.3s ease;}
 #settings-panel.open{left:20px;}
 .settings-section{padding:12px 14px 4px;border-bottom:2px solid #1a1a2e;}
 .settings-section-title{font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:0.12em;color:#4A90D9;margin-bottom:10px;}
@@ -169,4 +169,5 @@ body.light .settings-row label{color:#1a1a2e;}
 body.light .toggle-track{background:#f0f0f8;}
 body.light .settings-row input[type=range]::-webkit-slider-thumb{background:#fff;}
 #btn-settings.active{background:#4A90D9;border-color:#4A90D9;color:#fff;box-shadow:0 0 12px rgba(74,144,217,0.4),4px 4px 0 #000;}
+#node-card.card-left{left:20px;transition:bottom 0.3s ease;}
 
