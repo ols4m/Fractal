@@ -1,7 +1,7 @@
 'use strict';
-let network=null,nodes=null,edges=null,isDark=true,currentNodeData={},currentEdgeData=[],edgeIdCounter=0,expandedNodes=new Set(),monochromeMode=false;
+let network=null,nodes=null,edges=null,isDark=true,currentNodeData={},currentEdgeData=[],edgeIdCounter=0,expandedNodes=new Set(),monochromeMode=false,labelsVisible=true;
 const FRACTAL_BLUE='#4A90D9';
-window.addEventListener('DOMContentLoaded',function(){initGraph();initSearch();initButtons();initButtonStack();initIntroCard();initNodeCard();initEdgeCard();initExplorePanel();initLoader();});
+window.addEventListener('DOMContentLoaded',function(){initGraph();initSearch();initButtons();initButtonStack();initIntroCard();initNodeCard();initEdgeCard();initExplorePanel();initSettingsPanel();initLoader();});
 function initGraph(){
   const container=document.getElementById('graph');
   nodes=new vis.DataSet([]);
@@ -29,7 +29,7 @@ function initGraph(){
     },
   };
   network=new vis.Network(container,{nodes,edges},options);
-  setTimeout(function(){const canvas=container.querySelector('canvas');if(canvas)canvas.style.backgroundColor='#0a0a0f';},100);
+  setTimeout(function(){const canvas=container.querySelector('canvas');if(canvas)canvas.style.backgroundColor='transparent';},100);
   network.on('click',function(params){
     if(params.nodes.length>0){
       const nodeId=params.nodes[0];
@@ -60,27 +60,39 @@ function generateMap(){
   if(tags.length===0)return;
   document.getElementById('intro-card').style.display='none';
   hideNodeCard();hideEdgeCard();
-  // Count existing central nodes to offset new ones horizontally
-  const existingCentral=Object.values(currentNodeData).filter(function(n){return n.level===0;}).length;
+  // Build list of root node IDs already on the map
+  const rootIds=Object.keys(currentNodeData).filter(function(id){return currentNodeData[id]&&currentNodeData[id].level===0;});
   let added=0;
   tags.forEach(function(tag){
-    if(currentNodeData[tag])return; // already planted
-    const x=(existingCentral+added)*700;
+    if(currentNodeData[tag])return;
+    // Spawn at a random position — hidden spring edges between roots handle gravitation
+    const x=Math.round((Math.random()-0.5)*700);
+    const y=Math.round((Math.random()-0.5)*700);
     added++;
     currentNodeData[tag]={name:tag,summary:'Central query node',color:'#2c2c3e',level:0};
     nodes.update([{
       id:tag,label:wrapLabel(tag),value:5,level:0,size:44,
       color:{background:'#2c2c3e',border:'#7B6CF6',highlight:{background:'#7B6CF6',border:'#5a4cd6'},hover:{background:'#3a3a50',border:'#7B6CF6'}},
-      font:{size:17,bold:true},x:x,y:0,
+      font:{size:17,bold:true},x:x,y:y,
     }]);
+    // Hidden spring edges to all existing roots so physics keeps clusters gravitating together
+    rootIds.forEach(function(existId){addRootLink(tag,existId);});
+    rootIds.push(tag);
   });
   if(added>0){
     document.getElementById('btn-clear').style.display='';
     network.fit({animation:{duration:600,easingFunction:'easeInOutQuad'}});
   }
 }
-async function generateRandom(){const query=await getRandomArticle();createTag(query);}
-function clearMap(){nodes.clear();edges.clear();clearTags();currentNodeData={};currentEdgeData=[];edgeIdCounter=0;expandedNodes=new Set();monochromeMode=false;document.getElementById('btn-monochrome').classList.remove('active');hideNodeCard();hideEdgeCard();closeExplorePanel();hideDemoBanner();document.getElementById('btn-clear').style.display='none';}
+function addRootLink(a,b){
+  const exists=currentEdgeData.some(function(e){return(e.source===a&&e.target===b)||(e.source===b&&e.target===a);});
+  if(exists)return;
+  const id='r'+(edgeIdCounter++);
+  currentEdgeData.push({id:id,source:a,target:b,relationship:'root-link'});
+  edges.add({id:id,from:a,to:b,hidden:true,length:520,physics:true});
+}
+async function generateRandom(){const query=await getRandomArticle();createTag(query);generateMap();}
+function clearMap(){nodes.clear();edges.clear();clearTags();currentNodeData={};currentEdgeData=[];edgeIdCounter=0;expandedNodes=new Set();monochromeMode=false;const monoTog=document.getElementById('tog-monochrome');if(monoTog){monoTog.setAttribute('data-on','false');monoTog.querySelector('.toggle-label').textContent='OFF';}hideNodeCard();hideEdgeCard();closeExplorePanel();hideDemoBanner();document.getElementById('btn-clear').style.display='none';}
 async function expandNode(nodeId){
   if(expandedNodes.has(nodeId))return;
   expandedNodes.add(nodeId);
@@ -270,10 +282,9 @@ function openExplorePanel(nodeId){
   requestAnimationFrame(function(){panel.classList.add('open');});
 }
 function closeExplorePanel(){const panel=document.getElementById('explore-panel');panel.classList.remove('open');setTimeout(function(){panel.style.display='none';},400);}
-function initButtonStack(){document.getElementById('btn-theme').addEventListener('click',toggleTheme);document.getElementById('btn-monochrome').addEventListener('click',toggleMonochrome);document.getElementById('btn-github').addEventListener('click',function(){window.open('https://github.com/ols4m/Fractal','_blank');});document.getElementById('btn-about').addEventListener('click',function(){window.open('https://github.com/ols4m/Fractal#readme','_blank');});}
+function initButtonStack(){document.getElementById('btn-github').addEventListener('click',function(){window.open('https://github.com/ols4m/Fractal','_blank');});document.getElementById('btn-about').addEventListener('click',function(){window.open('https://github.com/ols4m/Fractal#readme','_blank');});}
 function toggleMonochrome(){
   monochromeMode=!monochromeMode;
-  document.getElementById('btn-monochrome').classList.toggle('active',monochromeMode);
   const updates=[];
   Object.entries(currentNodeData).forEach(function([id,data]){
     if(data.level===0)return; // leave central nodes untouched
@@ -298,22 +309,6 @@ function toggleMonochrome(){
   });
   nodes.update(updates);
 }
-function toggleTheme(){
-  const themeBtn=document.getElementById('btn-theme');
-  themeBtn.classList.add('switching');
-  setTimeout(function(){
-    isDark=!isDark;
-    document.body.classList.toggle('light',!isDark);
-    const canvas=document.querySelector('#graph canvas');
-    if(canvas)canvas.style.backgroundColor=isDark?'#0a0a0f':'#f8f8fc';
-    if(network){network.setOptions({nodes:{font:{color:isDark?'#e8e8f0':'#1a1a2e'}}});network.redraw();}
-    themeBtn.classList.toggle('light',!isDark);
-    const icon=document.getElementById('theme-icon');
-    if(isDark){icon.innerHTML='<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';}
-    else{icon.innerHTML='<circle cx="12" cy="12" r="4" fill="#7B6CF6"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="#7B6CF6" stroke-width="2" stroke-linecap="round" fill="none"/>';}
-  },225);
-  setTimeout(function(){themeBtn.classList.remove('switching');},500);
-}
 function initIntroCard(){document.getElementById('btn-get-started').addEventListener('click',function(){document.getElementById('intro-card').style.display='none';document.getElementById('fractal-input').focus();});}
 function showDemoBanner(){document.getElementById('demo-banner').style.display='inline-flex';}
 function hideDemoBanner(){document.getElementById('demo-banner').style.display='none';}
@@ -322,3 +317,96 @@ function showLoader(){const loader=document.getElementById('loader');if(loader)l
 function hideLoader(){const loader=document.getElementById('loader');if(loader)loader.classList.remove('visible');}
 function makeDraggable(cardId,handleId,onDrag){const card=document.getElementById(cardId);const handle=document.getElementById(handleId);if(!card||!handle)return;let dragging=false,startX,startY,startL,startT;handle.addEventListener('mousedown',function(e){dragging=true;card.style.zIndex=200;startX=e.clientX;startY=e.clientY;startL=card.offsetLeft;startT=card.offsetTop;e.preventDefault();});document.addEventListener('mousemove',function(e){if(!dragging)return;card.style.left=(startL+e.clientX-startX)+'px';card.style.top=(startT+e.clientY-startY)+'px';card.style.transform='none';if(onDrag)onDrag();});document.addEventListener('mouseup',function(){dragging=false;card.style.zIndex=50;});handle.addEventListener('touchstart',function(e){dragging=true;startX=e.touches[0].clientX;startY=e.touches[0].clientY;startL=card.offsetLeft;startT=card.offsetTop;},{passive:true});document.addEventListener('touchmove',function(e){if(!dragging)return;card.style.left=(startL+e.touches[0].clientX-startX)+'px';card.style.top=(startT+e.touches[0].clientY-startY)+'px';card.style.transform='none';if(onDrag)onDrag();},{passive:true});document.addEventListener('touchend',function(){dragging=false;});}
 window.addEventListener('resize',updateTether);
+function setupToggle(id,callback){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.addEventListener('click',function(){
+    const next=el.getAttribute('data-on')!=='true';
+    el.setAttribute('data-on',String(next));
+    el.querySelector('.toggle-label').textContent=next?'ON':'OFF';
+    callback(next);
+  });
+}
+function toggleSettingsPanel(){
+  const open=document.getElementById('settings-panel').classList.toggle('open');
+  document.getElementById('btn-settings').classList.toggle('active',open);
+}
+function closeSettingsPanel(){
+  document.getElementById('settings-panel').classList.remove('open');
+  document.getElementById('btn-settings').classList.remove('active');
+}
+function initSettingsPanel(){
+  document.getElementById('btn-settings').addEventListener('click',toggleSettingsPanel);
+  document.getElementById('btn-settings-close').addEventListener('click',closeSettingsPanel);
+  document.getElementById('btn-settings-reset').addEventListener('click',resetSettings);
+  document.getElementById('sl-spring').addEventListener('input',function(){
+    document.getElementById('val-spring').textContent=this.value;
+    if(network)network.setOptions({physics:{barnesHut:{springLength:+this.value}}});
+  });
+  document.getElementById('sl-gravity').addEventListener('input',function(){
+    const v=+this.value;
+    document.getElementById('val-gravity').textContent=(v/1000).toFixed(1)+'k';
+    if(network)network.setOptions({physics:{barnesHut:{gravitationalConstant:v}}});
+  });
+  document.getElementById('sl-damping').addEventListener('input',function(){
+    document.getElementById('val-damping').textContent=(+this.value).toFixed(2);
+    if(network)network.setOptions({physics:{barnesHut:{damping:+this.value}}});
+  });
+  document.getElementById('sl-edge-w').addEventListener('input',function(){
+    document.getElementById('val-edge-w').textContent=this.value;
+    if(network)network.setOptions({edges:{width:+this.value,selectionWidth:+this.value*2}});
+  });
+  document.getElementById('sl-node-s').addEventListener('input',function(){
+    const v=+this.value;
+    document.getElementById('val-node-s').textContent=v;
+    if(network)network.setOptions({nodes:{scaling:{min:Math.round(v*0.53),max:v}}});
+  });
+  document.getElementById('sl-dots').addEventListener('input',function(){
+    document.getElementById('val-dots').textContent=this.value;
+    const s=this.value+'px '+this.value+'px';
+    document.getElementById('graph').style.backgroundSize=s;
+  });
+  setupToggle('tog-physics',function(on){if(network)network.setOptions({physics:{enabled:on}});});
+  setupToggle('tog-curved',function(on){if(network)network.setOptions({edges:{smooth:{type:on?'continuous':'discrete'}}});});
+  setupToggle('tog-theme',function(on){
+    isDark=on;
+    document.body.classList.toggle('light',!isDark);
+    const canvas=document.querySelector('#graph canvas');
+    if(canvas)canvas.style.backgroundColor='transparent';
+    if(network){network.setOptions({nodes:{font:{color:isDark?'#e8e8f0':'#1a1a2e'}}});network.redraw();}
+  });
+  setupToggle('tog-monochrome',function(){ toggleMonochrome(); });
+  setupToggle('tog-labels',function(on){
+    labelsVisible=on;
+    const updates=Object.keys(currentNodeData).map(function(id){
+      const lvl=currentNodeData[id]&&currentNodeData[id].level;
+      return {id:id,font:{size:on?(lvl===0?17:13):0,bold:lvl===0&&on}};
+    });
+    if(updates.length>0)nodes.update(updates);
+    if(network)network.setOptions({nodes:{font:{size:on?13:0}}});
+  });
+}
+function resetSettings(){
+  document.getElementById('sl-spring').value=130;document.getElementById('val-spring').textContent='130';
+  document.getElementById('sl-gravity').value=-8000;document.getElementById('val-gravity').textContent='-8.0k';
+  document.getElementById('sl-damping').value=0.06;document.getElementById('val-damping').textContent='0.06';
+  document.getElementById('sl-edge-w').value=2;document.getElementById('val-edge-w').textContent='2';
+  document.getElementById('sl-node-s').value=30;document.getElementById('val-node-s').textContent='30';
+  document.getElementById('sl-dots').value=28;document.getElementById('val-dots').textContent='28';
+  document.getElementById('graph').style.backgroundSize='28px 28px';
+  ['tog-physics','tog-curved','tog-labels'].forEach(function(id){
+    const el=document.getElementById(id);el.setAttribute('data-on','true');el.querySelector('.toggle-label').textContent='ON';
+  });
+  // Reset monochrome to off
+  if(monochromeMode)toggleMonochrome();
+  const monoTog=document.getElementById('tog-monochrome');if(monoTog){monoTog.setAttribute('data-on','false');monoTog.querySelector('.toggle-label').textContent='OFF';}
+  // Reset theme to dark
+  if(!isDark){isDark=true;document.body.classList.remove('light');if(network){network.setOptions({nodes:{font:{color:'#e8e8f0'}}});network.redraw();}}
+  const themeTog=document.getElementById('tog-theme');if(themeTog){themeTog.setAttribute('data-on','true');themeTog.querySelector('.toggle-label').textContent='ON';}
+  labelsVisible=true;
+  if(network){network.setOptions({physics:{enabled:true,barnesHut:{gravitationalConstant:-8000,springLength:130,damping:0.06}},edges:{width:2,selectionWidth:4,smooth:{type:'continuous'}},nodes:{scaling:{min:16,max:30},font:{size:13}}});}
+  const updates=Object.keys(currentNodeData).map(function(id){
+    const lvl=currentNodeData[id]&&currentNodeData[id].level;return {id:id,font:{size:lvl===0?17:13,bold:lvl===0}};
+  });
+  if(updates.length>0)nodes.update(updates);
+}

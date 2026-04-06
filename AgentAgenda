@@ -14,7 +14,7 @@ Two sections:
 1. **Wire the Explore panel to real AI output** — "Key facts will be generated here" and "Further reading will be generated here" are placeholders. These should make an AI call for the selected node and populate with real content.
 2. **Visual indicator for expanded nodes** — no way to tell which nodes have already been expanded. Add a subtle glow, pulsing ring, or border change to mark expanded nodes differently from unexpanded ones.
 3. **Light mode polish pass** — some UI elements still look rough in light mode. Do a full sweep.
-4. **Random button UX** — currently just adds a tag silently. Should auto-MAP or give feedback.
+4. **Random button UX** — auto-MAP on random is controversial, revisit later. Skipping for now.
 5. **Expand panel animation** — currently slides out correctly but slide-in uses requestAnimationFrame which can still feel abrupt on some devices. Consider a CSS class-based approach with a proper transition delay.
 
 -----
