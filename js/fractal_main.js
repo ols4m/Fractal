@@ -69,7 +69,7 @@ function generateMap(){
     const x=Math.round((Math.random()-0.5)*700);
     const y=Math.round((Math.random()-0.5)*700);
     added++;
-    currentNodeData[tag]={name:tag,summary:'Central query node',color:'#2c2c3e',level:0};
+    currentNodeData[tag]={name:tag,summary:'',color:'#2c2c3e',level:0};
     nodes.update([{
       id:tag,label:wrapLabel(tag),value:5,level:0,size:44,
       color:{background:'#2c2c3e',border:'#7B6CF6',highlight:{background:'#7B6CF6',border:'#5a4cd6'},hover:{background:'#3a3a50',border:'#7B6CF6'}},
@@ -78,6 +78,19 @@ function generateMap(){
     // Hidden spring edges to all existing roots so physics keeps clusters gravitating together
     rootIds.forEach(function(existId){addRootLink(tag,existId);});
     rootIds.push(tag);
+    // Fetch description in background — update node card if it's open
+    (function(t){
+      fetch('/describe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:t})})
+        .then(function(r){return r.ok?r.json():null;})
+        .then(function(d){
+          if(d&&d.summary&&currentNodeData[t]){
+            currentNodeData[t].summary=d.summary;
+            const title=document.getElementById('node-card-title');
+            if(title&&title.textContent===t)document.getElementById('node-card-summary').textContent=d.summary;
+          }
+        })
+        .catch(function(){});
+    })(tag);
   });
   if(added>0){
     document.getElementById('btn-clear').style.display='';
@@ -239,16 +252,14 @@ function wrapLabel(text){if(text.length<=18)return text;const words=text.split('
 function initNodeCard(){document.getElementById('btn-node-close').addEventListener('click',hideNodeCard);document.getElementById('btn-node-explore').addEventListener('click',function(){const title=document.getElementById('node-card-title').textContent;openExplorePanel(title);});makeDraggable('node-card','node-card-head');}
 function showNodeCard(nodeId,nodeData){
   const card=document.getElementById('node-card');
-  const isEmergent =
-    nodeData.color === 'grey' ||
-    nodeData.type === 'emergent' ||
-    nodeData.color === '#888888' ||
-    (nodeId && nodeId.toLowerCase().includes('emergent'));
+  const isCentral=nodeData.level===0;
+  const isEmergent=!isCentral&&(nodeData.color==='grey'||nodeData.type==='emergent'||nodeData.color==='#888888'||(nodeId&&nodeId.toLowerCase().includes('emergent')));
   document.getElementById('node-card-title').textContent=nodeId;
   document.getElementById('node-card-summary').textContent=nodeData.summary||'';
-  document.getElementById('node-card-type').textContent=isEmergent?'Emergent':'Domain';
+  document.getElementById('node-card-type').textContent=isCentral?'Central':isEmergent?'Emergent':'Domain';
   const head=card.querySelector('.node-card-head');
   head.classList.toggle('emergent',isEmergent);
+  head.classList.toggle('central',isCentral);
   card.style.display='block';
   highlightPath(nodeId);
   adjustSettingsHeight();

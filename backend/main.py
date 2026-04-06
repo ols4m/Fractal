@@ -102,9 +102,31 @@ class MapRequest(BaseModel):
     query: str
     existing_nodes: list = []
 
+class DescribeRequest(BaseModel):
+    query: str
+
 @app.get("/health")
 def health():
     return {"status":"ok","mode":ENVIRONMENT}
+
+@app.post("/describe")
+async def describe_node(request: DescribeRequest):
+    try:
+        if not GROQ_API_KEY:
+            return {"summary": f"A central inquiry into {request.query}."}
+        prompt = f"""Give a direct, specific 2-sentence description of "{request.query}" as a concept, field, or domain.
+Return ONLY valid JSON: {{"summary": "..."}}
+No prose. No markdown. No backticks."""
+        async with httpx.AsyncClient(timeout=20) as client:
+            r = await client.post(GROQ_URL,
+                headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
+                json={"model": GROQ_MODEL, "messages": [{"role": "user", "content": prompt}],
+                      "temperature": 0.3, "response_format": {"type": "json_object"}})
+        data = json.loads(r.json()["choices"][0]["message"]["content"])
+        return {"summary": data.get("summary", f"A central inquiry into {request.query}.")}
+    except Exception as e:
+        print(f"Describe error: {e}")
+        return {"summary": f"A central inquiry into {request.query}."}
 
 @app.post("/generate-map")
 async def generate_map(request: MapRequest):
