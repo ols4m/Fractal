@@ -266,7 +266,7 @@ function adjustSettingsHeight(){
   const panel=document.getElementById('settings-panel');
   const card=document.getElementById('node-card');
   if(!panel)return;
-  if(panel.classList.contains('open')&&card&&card.style.display!=='none'){
+  if(nodeCardLeft&&panel.classList.contains('open')&&card&&card.style.display!=='none'){
     const cardTop=card.getBoundingClientRect().top;
     panel.style.bottom=(window.innerHeight-cardTop+10)+'px';
   }else{
