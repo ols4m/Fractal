@@ -1,7 +1,7 @@
 'use strict';
 let network=null,nodes=null,edges=null,isDark=true,isMultiColor=true,currentNodeData={},currentEdgeData=[],edgeIdCounter=0,expandedNodes=new Set(),monochromeMode=false,labelsVisible=true;
 const FRACTAL_BLUE='#4A90D9';
-window.addEventListener('DOMContentLoaded',function(){initGraph();initSearch();initButtons();initButtonStack();initIntroCard();initNodeCard();initEdgeCard();initExplorePanel();initSettingsPanel();initMiniSettings();initLoader();});
+window.addEventListener('DOMContentLoaded',function(){initGraph();initSearch();initButtons();initButtonStack();initIntroCard();initNodeCard();initEdgeCard();initExplorePanel();initSettingsPanel();initLoader();});
 function initGraph(){
   const container=document.getElementById('graph');
   nodes=new vis.DataSet([]);
