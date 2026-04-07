@@ -200,6 +200,20 @@
           <label>Damping <span class="settings-val" id="val-damping">0.06</span></label>
           <input type="range" id="sl-damping" min="0.01" max="0.30" value="0.06" step="0.01">
         </div>
+        <div class="settings-row">
+          <label>Wiki Mode</label>
+          <div class="settings-toggle" id="tog-wiki" data-on="false">
+            <div class="toggle-track"><div class="toggle-thumb"></div></div>
+            <span class="toggle-label">OFF</span>
+          </div>
+        </div>
+        <div class="settings-row wiki-sub" id="row-wiki-tight" style="display:none;">
+          <label>Tight</label>
+          <div class="settings-toggle" id="tog-wiki-tight" data-on="false">
+            <div class="toggle-track"><div class="toggle-thumb"></div></div>
+            <span class="toggle-label">OFF</span>
+          </div>
+        </div>
       </div>
       <div class="settings-section">
         <div class="settings-section-title">Visual</div>
@@ -233,9 +247,9 @@
         </div>
         <div class="settings-row">
           <label>Card Left</label>
-          <div class="settings-toggle" id="tog-card-left" data-on="false">
+          <div class="settings-toggle" id="tog-card-left" data-on="true">
             <div class="toggle-track"><div class="toggle-thumb"></div></div>
-            <span class="toggle-label">OFF</span>
+            <span class="toggle-label">ON</span>
           </div>
         </div>
         <div class="settings-row">
@@ -277,7 +291,7 @@
 
   <script src="./js/fractal_api.js?v=6"></script>
 
-  <script src="./js/fractal_main.js?v=29"></script>
+  <script src="./js/fractal_main.js?v=37"></script>
 
 </body>
 </html>

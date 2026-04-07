@@ -1,5 +1,5 @@
 'use strict';
-let network=null,nodes=null,edges=null,isDark=true,isMultiColor=true,currentNodeData={},currentEdgeData=[],edgeIdCounter=0,expandedNodes=new Set(),monochromeMode=false,labelsVisible=true,nodeCardLeft=false;
+let network=null,nodes=null,edges=null,isDark=true,isMultiColor=true,currentNodeData={},currentEdgeData=[],edgeIdCounter=0,expandedNodes=new Set(),monochromeMode=false,labelsVisible=true,nodeCardLeft=true,wikiMode=false,wikiTight=false;
 const FRACTAL_BLUE='#4A90D9';
 window.addEventListener('DOMContentLoaded',function(){initGraph();initSearch();initButtons();initButtonStack();initIntroCard();initNodeCard();initEdgeCard();initExplorePanel();initSettingsPanel();initLoader();});
 function initGraph(){
@@ -169,25 +169,38 @@ function addCluster(parentId,data){
     const isEmergent=node.color==='#888888'||node.color==='grey';
     const angle=outwardAngle+((i/(Math.max(data.nodes.length-1,1)))-0.5)*arcSpread;
     currentNodeData[node.name]=Object.assign({},node,{level:parentLevel+1});
-    newVisNodes.push({
-      id:node.name,label:wrapLabel(node.name),value:isEmergent?2:3,size:isEmergent?20:26,level:parentLevel+1,
+    const wrappedLabel=wrapLabel(node.name);
+    const labelLines=wrappedLabel.split('\n').length;
+    // In wiki mode: use value-based scaling (no fixed size) so longer labels get bigger nodes.
+    // value = line count + 1 ensures multi-line labels get proportionally larger circles.
+    const nodeValue=wikiMode?Math.max(2,labelLines+1):(isEmergent?2:3);
+    const nodeObj={
+      id:node.name,label:wrappedLabel,value:nodeValue,level:parentLevel+1,
       color:{
         background:isEmergent?washColor('#555566',parentLevel):(monochromeMode?FRACTAL_BLUE:washColor(node.color||'#4A90D9',parentLevel)),
         border:isEmergent?'#333344':washColor('#2a6aad',parentLevel),
         highlight:{background:'#7B6CF6',border:'#5a4cd6'},
         hover:{background:isEmergent?washColor('#666677',parentLevel):(monochromeMode?'#5aa0e9':washColor('#5aa0e9',parentLevel)),border:'#2a6aad'},
       },
-      x:Math.round(px+radius*Math.cos(angle)),
-      y:Math.round(py+radius*Math.sin(angle)),
-    });
+      x:wikiMode?px:Math.round(px+radius*Math.cos(angle)),
+      y:wikiMode?py:Math.round(py+radius*Math.sin(angle)),
+    };
+    // In wiki mode let scaling.min/max drive size; outside wiki mode keep fixed sizes
+    if(!wikiMode)nodeObj.size=isEmergent?20:26;
+    // Scale font down slightly for longer labels so text fits better
+    if(wikiMode)nodeObj.font={size:Math.max(10,14-(labelLines-1))};
+    newVisNodes.push(nodeObj);
   });
   nodes.update(newVisNodes);
 
   // Lengthen the edge connecting parentId to its own parent so the cluster has room
-  const parentEdge=currentEdgeData.find(function(e){return e.target===parentId;});
-  if(parentEdge){
-    const newLength=Math.max(220,150+(data.nodes.length*18));
-    edges.update({id:parentEdge.id,length:newLength});
+  // In wiki mode: skip — let physics drive spacing purely like Wikipedia Map does
+  if(!wikiMode){
+    const parentEdge=currentEdgeData.find(function(e){return e.target===parentId;});
+    if(parentEdge){
+      const newLength=Math.max(220,150+(data.nodes.length*18));
+      edges.update({id:parentEdge.id,length:newLength});
+    }
   }
 
   // Wire parent → each new child only (star/spoke pattern)
@@ -282,6 +295,76 @@ function adjustSettingsHeight(){
     panel.style.bottom=(window.innerHeight-cardTop+10)+'px';
   }else{
     panel.style.bottom='';
+  }
+}
+function setCurvedToggle(on){
+  const el=document.getElementById('tog-curved');
+  if(el){el.setAttribute('data-on',String(on));el.querySelector('.toggle-label').textContent=on?'ON':'OFF';}
+}
+function applyWikiLoose(){
+  if(!network)return;
+  network.setOptions({
+    physics:{
+      enabled:true,solver:'repulsion',adaptiveTimestep:true,maxVelocity:200,
+      repulsion:{centralGravity:0.2,springLength:200,springConstant:0.08,nodeDistance:180,damping:0.12},
+    },
+    nodes:{scaling:{min:22,max:46,label:{min:12,max:24,drawThreshold:8,maxVisible:20}},font:{size:11}},
+    edges:{width:1.5,selectionWidth:3,hoverWidth:0,smooth:{type:'dynamic'}},
+  });
+  setCurvedToggle(false);
+  document.getElementById('sl-spring').value=200;document.getElementById('val-spring').textContent='200';
+  document.getElementById('sl-damping').value=0.12;document.getElementById('val-damping').textContent='0.12';
+  document.getElementById('sl-node-s').value=46;document.getElementById('val-node-s').textContent='46';
+  document.getElementById('sl-edge-w').value=1.5;document.getElementById('val-edge-w').textContent='1.5';
+  network.startSimulation();
+}
+function applyWikiTight(){
+  if(!network)return;
+  // Wikipedia Map exact: vis.js barnesHut defaults + fast springConstant + high maxVelocity for snappy burst
+  network.setOptions({
+    physics:{
+      enabled:true,solver:'barnesHut',adaptiveTimestep:true,maxVelocity:200,
+      stabilization:{enabled:true,iterations:1000,fit:true},
+      barnesHut:{gravitationalConstant:-2000,centralGravity:0.3,springLength:95,springConstant:0.08,damping:0.12,avoidOverlap:0},
+    },
+    nodes:{scaling:{min:20,max:30,label:{min:14,max:30,drawThreshold:9,maxVisible:20}},font:{size:11}},
+    edges:{width:1,selectionWidth:2,hoverWidth:0,smooth:{type:'dynamic'}},
+  });
+  setCurvedToggle(false);
+  document.getElementById('sl-spring').value=95;document.getElementById('val-spring').textContent='95';
+  document.getElementById('sl-gravity').value=-2000;document.getElementById('val-gravity').textContent='-2.0k';
+  document.getElementById('sl-damping').value=0.12;document.getElementById('val-damping').textContent='0.12';
+  document.getElementById('sl-node-s').value=30;document.getElementById('val-node-s').textContent='30';
+  document.getElementById('sl-edge-w').value=1;document.getElementById('val-edge-w').textContent='1';
+  network.stabilize(1000);
+}
+function setWikiTight(on){
+  wikiTight=on;
+  const tog=document.getElementById('tog-wiki-tight');
+  if(tog){tog.setAttribute('data-on',String(on));tog.querySelector('.toggle-label').textContent=on?'ON':'OFF';}
+  if(wikiMode){on?applyWikiTight():applyWikiLoose();}
+}
+function setWikiMode(on){
+  wikiMode=on;
+  const tog=document.getElementById('tog-wiki');
+  if(tog){tog.setAttribute('data-on',String(on));tog.querySelector('.toggle-label').textContent=on?'ON':'OFF';}
+  const subRow=document.getElementById('row-wiki-tight');
+  if(subRow)subRow.style.display=on?'':'none';
+  if(!network)return;
+  if(on){
+    wikiTight?applyWikiTight():applyWikiLoose();
+  }else{
+    network.setOptions({
+      physics:{enabled:true,solver:'barnesHut',barnesHut:{gravitationalConstant:-8000,centralGravity:0,springLength:130,springConstant:0.04,damping:0.06,avoidOverlap:0.3}},
+      nodes:{scaling:{min:16,max:30}},
+      edges:{width:2,selectionWidth:4,smooth:{type:'continuous'}},
+    });
+    setCurvedToggle(true);
+    document.getElementById('sl-spring').value=130;document.getElementById('val-spring').textContent='130';
+    document.getElementById('sl-gravity').value=-8000;document.getElementById('val-gravity').textContent='-8.0k';
+    document.getElementById('sl-damping').value=0.06;document.getElementById('val-damping').textContent='0.06';
+    document.getElementById('sl-node-s').value=30;document.getElementById('val-node-s').textContent='30';
+    document.getElementById('sl-edge-w').value=2;document.getElementById('val-edge-w').textContent='2';
   }
 }
 function initEdgeCard(){document.getElementById('btn-edge-close').addEventListener('click',hideEdgeCard);document.getElementById('btn-edge-close-2').addEventListener('click',hideEdgeCard);document.getElementById('btn-explore-both').addEventListener('click',exploreBoth);document.getElementById('edge-dropdown-btn').addEventListener('click',function(){this.classList.toggle('open');document.getElementById('edge-dropdown-content').classList.toggle('open');});makeDraggable('edge-card','edge-drag-handle',updateTether);}
@@ -486,6 +569,8 @@ function initSettingsPanel(){
   setupToggle('tog-theme',function(on){ setThemeState(on); });
   setupToggle('tog-monochrome',function(on){ setColorState(!on); });
   setupToggle('tog-card-left',function(on){setNodeCardPosition(on);});
+  setupToggle('tog-wiki',function(on){setWikiMode(on);});
+  setupToggle('tog-wiki-tight',function(on){setWikiTight(on);});
   setupToggle('tog-labels',function(on){
     labelsVisible=on;
     const updates=Object.keys(currentNodeData).map(function(id){
@@ -495,6 +580,8 @@ function initSettingsPanel(){
     if(updates.length>0)nodes.update(updates);
     if(network)network.setOptions({nodes:{font:{size:on?13:0}}});
   });
+  // Apply default card position on init
+  setNodeCardPosition(true);
 }
 function resetSettings(){
   document.getElementById('sl-spring').value=130;document.getElementById('val-spring').textContent='130';
@@ -512,8 +599,10 @@ function resetSettings(){
   // Reset theme to dark
   setThemeState(true);
   labelsVisible=true;
-  setNodeCardPosition(false);
-  if(network){network.setOptions({physics:{enabled:true,barnesHut:{gravitationalConstant:-8000,springLength:130,damping:0.06}},edges:{width:2,selectionWidth:4,smooth:{type:'continuous'}},nodes:{scaling:{min:16,max:30},font:{size:13}}});}
+  setNodeCardPosition(true);
+  wikiTight=false;setWikiTight(false);
+  setWikiMode(false);
+  if(network){network.setOptions({physics:{enabled:true,solver:'barnesHut',barnesHut:{gravitationalConstant:-8000,centralGravity:0,springLength:130,springConstant:0.04,damping:0.06,avoidOverlap:0.3}},edges:{width:2,selectionWidth:4,smooth:{type:'continuous'}},nodes:{scaling:{min:16,max:30},font:{size:13}}});}
   const updates=Object.keys(currentNodeData).map(function(id){
     const lvl=currentNodeData[id]&&currentNodeData[id].level;return {id:id,font:{size:lvl===0?17:13,bold:lvl===0}};
   });
