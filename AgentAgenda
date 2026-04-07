@@ -7,15 +7,14 @@ Two sections:
 
 -----
 
-## PICK UP HERE — Session 8
+## PICK UP HERE — Session 9
 
-**Core interaction is working. Next focus is content and polish.**
+**Wiki mode is solid. Next focus is making the Explore panel show real data.**
 
-1. **Wire the Explore panel to real AI output** — "Key facts will be generated here" and "Further reading will be generated here" are placeholders. These should make an AI call for the selected node and populate with real content.
+1. **Wire the Explore panel to real data** — currently Groq hallucinates everything. Replace with Wikipedia API (free, no key) as ground truth, Groq synthesizes key facts from real article text. Backend: `POST /explore` fetches `https://en.wikipedia.org/api/rest_v1/page/summary/{topic}`, passes extract to Groq, returns `{summary, facts[], thumbnail, wiki_url}`. Frontend: render facts list, thumbnail, "Read on Wikipedia" link. Fallback to pure Groq if no Wikipedia article found.
 2. **Visual indicator for expanded nodes** — no way to tell which nodes have already been expanded. Add a subtle glow, pulsing ring, or border change to mark expanded nodes differently from unexpanded ones.
 3. **Light mode polish pass** — some UI elements still look rough in light mode. Do a full sweep.
-4. **Random button UX** — auto-MAP on random is controversial, revisit later. Skipping for now.
-5. **Expand panel animation** — currently slides out correctly but slide-in uses requestAnimationFrame which can still feel abrupt on some devices. Consider a CSS class-based approach with a proper transition delay.
+4. **Expand panel animation** — currently uses requestAnimationFrame which can feel abrupt on some devices. Consider a CSS class-based approach with a proper transition delay.
 
 -----
 

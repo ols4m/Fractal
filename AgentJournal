@@ -374,6 +374,61 @@ Context-aware expansion — each node click sends existing map as context so AI 
 
 -----
 
+## Session 8 — April 7 2026
+
+### What Was Accomplished
+
+Major wiki mode polish, node card improvements, and several UX defaults fixed. JS now at `fractal_main.js?v=37`.
+
+**Wiki Mode (new this session)**
+- Added Wiki Mode toggle in Physics section — switches to `repulsion` solver with Wikipedia Map-style physics, larger nodes, thinner edges
+- Added Tight sub-toggle (only visible when Wiki Mode is ON) — uses exact Wikipedia Map vis.js `barnesHut` defaults verbatim from their source
+- Node spawn position in wiki mode: all new nodes spawn at parent `(x, y)` position instead of pre-spread ring — creates the rapid burst animation Wikipedia Map has
+- Physics: `adaptiveTimestep:true`, `maxVelocity:200`, `springConstant:0.08` for snappy settling
+- `setCurvedToggle()` helper keeps curved edges toggle in sync when switching modes
+- Edge lengths in wiki mode: removed per-edge `length` override entirely — physics-driven only, matching Wikipedia Map (they never set `length` on individual edges)
+
+**Node Sizing in Wiki Mode**
+- Removed hardcoded `size` on child nodes in wiki mode — lets `scaling.min/max` actually work (vis.js ignores scaling when `size` is set directly)
+- `value` now set to `labelLines + 1` — longer labels get proportionally bigger circles
+- Font size reduced to 11px in wiki mode (down from 13px default), scales down per extra label line
+
+**Node Card**
+- Center nodes (level 0) now show "Central" badge with purple header instead of "Domain"
+- AI-generated description fetched live on map creation via new `/describe` backend endpoint (Groq, JSON mode, 2-sentence description). Populates node card summary as soon as it arrives — non-blocking IIFE fetch
+- Graceful fallback if no API key or Groq error
+
+**Edge Card**
+- Arrow between node names enlarged: 20px (was 12px), color #888 (was near-invisible #444)
+
+**UX Defaults**
+- Card Left now defaults to ON — applied via `setNodeCardPosition(true)` at end of `initSettingsPanel` (was only set as a variable, CSS class never applied on load)
+- Reset Defaults also resets to Card Left ON
+
+### Backend Changes (`backend/main.py`)
+- Added `POST /describe` endpoint — takes `{query}`, returns `{"summary": "..."}` (2-sentence description via Groq JSON mode). Falls back to `"A central inquiry into {query}."` on any error.
+
+### Current State
+- JS at `v=37`
+- Wiki mode fully functional with loose and tight sub-modes
+- Explore panel still placeholder — wired up but content is not real data
+
+### What To Work On Next (Session 9)
+
+**Priority 1 — Explore Panel Real Data**
+Replace pure Groq hallucination with Wikipedia API + Groq synthesis:
+- Backend: `POST /explore` fetches `https://en.wikipedia.org/api/rest_v1/page/summary/{topic}`, passes extract to Groq for structured key facts, returns `{summary, facts[], thumbnail, wiki_url}`
+- Frontend: render facts list, thumbnail, "Read on Wikipedia" link
+- Fallback to pure Groq if Wikipedia has no article
+
+**Priority 2 — Expanded Node Visual Indicator**
+Subtle glow or border change on nodes that have already been expanded.
+
+**Priority 3 — Expand Panel Animation**
+CSS class-based transition for the Explore panel (current requestAnimationFrame approach can feel abrupt).
+
+-----
+
 ## Session 7 — March 31 2026
 
 ### What Was Accomplished
