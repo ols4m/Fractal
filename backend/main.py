@@ -105,6 +105,9 @@ class MapRequest(BaseModel):
 class DescribeRequest(BaseModel):
     query: str
 
+class ExploreRequest(BaseModel):
+    topic: str
+
 @app.get("/health")
 def health():
     return {"status":"ok","mode":ENVIRONMENT}
@@ -127,6 +130,51 @@ No prose. No markdown. No backticks."""
     except Exception as e:
         print(f"Describe error: {e}")
         return {"summary": f"A central inquiry into {request.query}."}
+
+@app.post("/explore")
+async def explore_topic(request: ExploreRequest):
+    topic = request.topic
+    wiki_extract = None
+    thumbnail = None
+    wiki_url = None
+
+    try:
+        encoded = topic.replace(" ", "_")
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.get(
+                f"https://en.wikipedia.org/api/rest_v1/page/summary/{encoded}",
+                headers={"User-Agent": "Fractal/1.0 (educational project)"}
+            )
+        if r.status_code == 200:
+            wiki = r.json()
+            wiki_extract = wiki.get("extract", "")
+            thumbnail = (wiki.get("thumbnail") or {}).get("source")
+            wiki_url = ((wiki.get("content_urls") or {}).get("desktop") or {}).get("page")
+    except Exception as e:
+        print(f"Wikipedia error: {e}")
+
+    facts = []
+    if GROQ_API_KEY:
+        try:
+            if wiki_extract:
+                prompt = f"""Extract 4-6 specific, interesting key facts about "{topic}" from this Wikipedia text.
+Return ONLY valid JSON: {{"facts": ["...", "..."]}}
+Wikipedia text: {wiki_extract[:1500]}
+No prose. No markdown. No backticks."""
+            else:
+                prompt = f"""Generate 4-6 specific, interesting key facts about "{topic}".
+Return ONLY valid JSON: {{"facts": ["...", "..."]}}
+No prose. No markdown. No backticks."""
+            async with httpx.AsyncClient(timeout=20) as client:
+                r = await client.post(GROQ_URL,
+                    headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
+                    json={"model": GROQ_MODEL, "messages": [{"role": "user", "content": prompt}],
+                          "temperature": 0.3, "response_format": {"type": "json_object"}})
+            facts = json.loads(r.json()["choices"][0]["message"]["content"]).get("facts", [])
+        except Exception as e:
+            print(f"Groq facts error: {e}")
+
+    return {"facts": facts, "thumbnail": thumbnail, "wiki_url": wiki_url}
 
 @app.post("/generate-map")
 async def generate_map(request: MapRequest):

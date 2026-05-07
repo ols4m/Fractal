@@ -60,14 +60,11 @@ function generateMap(){
   if(tags.length===0)return;
   document.getElementById('intro-card').style.display='none';
   hideNodeCard();hideEdgeCard();
-  // Build list of root node IDs already on the map
-  const rootIds=Object.keys(currentNodeData).filter(function(id){return currentNodeData[id]&&currentNodeData[id].level===0;});
   let added=0;
   tags.forEach(function(tag){
     if(currentNodeData[tag])return;
-    // Spawn at a random position — hidden spring edges between roots handle gravitation
-    const x=Math.round((Math.random()-0.5)*700);
-    const y=Math.round((Math.random()-0.5)*700);
+    const x=Math.round((Math.random()-0.5)*260);
+    const y=Math.round((Math.random()-0.5)*260);
     added++;
     currentNodeData[tag]={name:tag,summary:'',color:'#2c2c3e',level:0};
     nodes.update([{
@@ -75,9 +72,6 @@ function generateMap(){
       color:{background:'#2c2c3e',border:'#7B6CF6',highlight:{background:'#7B6CF6',border:'#5a4cd6'},hover:{background:'#3a3a50',border:'#7B6CF6'}},
       font:{size:17,bold:true},x:x,y:y,
     }]);
-    // Hidden spring edges to all existing roots so physics keeps clusters gravitating together
-    rootIds.forEach(function(existId){addRootLink(tag,existId);});
-    rootIds.push(tag);
     // Fetch description in background — update node card if it's open
     (function(t){
       fetch('/describe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:t})})
@@ -97,13 +91,7 @@ function generateMap(){
     network.fit({animation:{duration:600,easingFunction:'easeInOutQuad'}});
   }
 }
-function addRootLink(a,b){
-  const exists=currentEdgeData.some(function(e){return(e.source===a&&e.target===b)||(e.source===b&&e.target===a);});
-  if(exists)return;
-  const id='r'+(edgeIdCounter++);
-  currentEdgeData.push({id:id,source:a,target:b,relationship:'root-link'});
-  edges.add({id:id,from:a,to:b,hidden:true,length:520,physics:true});
-}
+
 async function generateRandom(){const query=await getRandomArticle();createTag(query);generateMap();}
 function clearMap(){
   nodes.clear();
@@ -376,18 +364,14 @@ function clearTether(){['node-edge-line','tether-line'].forEach(function(id){con
 function initExplorePanel(){document.getElementById('btn-panel-close').addEventListener('click',closeExplorePanel);}
 function openExplorePanel(nodeId){
   const nodeData=currentNodeData[nodeId]||{};
-  const isEmergent =
-    nodeData.color === 'grey' ||
-    nodeData.type === 'emergent' ||
-    nodeData.color === '#888888' ||
-    (nodeId && nodeId.toLowerCase().includes('emergent'));
-
+  const isEmergent=nodeData.color==='grey'||nodeData.type==='emergent'||nodeData.color==='#888888'||(nodeId&&nodeId.toLowerCase().includes('emergent'));
   document.getElementById('panel-title').textContent=nodeId;
   document.getElementById('panel-type').textContent=isEmergent?'Emergent Node':'Domain Node';
   document.getElementById('panel-summary').textContent=nodeData.summary||'';
-  document.getElementById('panel-facts').textContent='Key facts will be generated here.';
-  document.getElementById('panel-reading').textContent='Further reading will be generated here.';
-
+  const factsEl=document.getElementById('panel-facts');
+  const linksEl=document.getElementById('panel-links');
+  factsEl.innerHTML='<span style="opacity:0.4;font-style:italic;">Loading...</span>';
+  linksEl.innerHTML='';
   const connectedDiv=document.getElementById('panel-connected');
   connectedDiv.innerHTML='';
   function makeChip(id,accent){
@@ -398,17 +382,46 @@ function openExplorePanel(nodeId){
     chip.addEventListener('click',function(){showNodeCard(id,currentNodeData[id]||{});});
     return chip;
   }
-  // Ancestry path — root → … → parent of this node
   const path=getAncestorPath(nodeId);
   path.slice(0,-1).forEach(function(id){connectedDiv.appendChild(makeChip(id,'#7B6CF6'));});
-  // Direct children this node expanded to
   currentEdgeData.forEach(function(edge){
     if(edge.source===nodeId)connectedDiv.appendChild(makeChip(edge.target,'#4A90D9'));
   });
-
   const panel=document.getElementById('explore-panel');
   panel.style.display='flex';
   requestAnimationFrame(function(){panel.classList.add('open');});
+  fetch('/explore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic:nodeId})})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data.facts&&data.facts.length){
+        const ul=document.createElement('ul');
+        ul.className='panel-facts-list';
+        data.facts.forEach(function(f){const li=document.createElement('li');li.textContent=f;ul.appendChild(li);});
+        factsEl.innerHTML='';
+        factsEl.appendChild(ul);
+      } else {
+        factsEl.textContent='No facts available.';
+      }
+      if(data.thumbnail){
+        const img=document.createElement('img');
+        img.src=data.thumbnail;
+        img.className='panel-thumbnail';
+        linksEl.appendChild(img);
+      }
+      if(data.wiki_url){
+        const a=document.createElement('a');
+        a.href=data.wiki_url;
+        a.target='_blank';
+        a.rel='noopener noreferrer';
+        a.className='panel-wiki-link';
+        a.textContent='Read on Wikipedia →';
+        linksEl.appendChild(a);
+      }
+      if(!data.thumbnail&&!data.wiki_url){
+        linksEl.innerHTML='<span style="opacity:0.4;font-style:italic;">No Wikipedia article found.</span>';
+      }
+    })
+    .catch(function(){factsEl.textContent='Could not load facts.';});
 }
 function closeExplorePanel(){const panel=document.getElementById('explore-panel');panel.classList.remove('open');setTimeout(function(){panel.style.display='none';},400);}
 function initButtonStack(){document.getElementById('btn-github').addEventListener('click',function(){window.open('https://github.com/ols4m/Fractal','_blank');});document.getElementById('btn-about').addEventListener('click',function(){window.open('https://github.com/ols4m/Fractal#readme','_blank');});}
